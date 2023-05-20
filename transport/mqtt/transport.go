@@ -2,8 +2,8 @@ package mqtt
 
 import (
 	"github.com/go-kratos/kratos/v2/transport"
-	"kratos-transport-rpc/broker"
-	transport2 "kratos-transport-rpc/transport"
+	"github.com/luobote55/kratos-transport-rpc/broker"
+	transport2 "github.com/luobote55/kratos-transport-rpc/transport"
 )
 
 const (

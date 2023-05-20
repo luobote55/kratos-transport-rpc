@@ -1,4 +1,4 @@
-module kratos-transport-rpc
+module github.com/luobote55/kratos-transport-rpc
 
 go 1.20
 
@@ -24,7 +24,6 @@ require (
 	github.com/gorilla/mux v1.8.0 // indirect
 	github.com/gorilla/websocket v1.4.2 // indirect
 	github.com/openzipkin/zipkin-go v0.4.1 // indirect
-	github.com/stretchr/testify v1.8.3 // indirect
 	go.opentelemetry.io/otel/exporters/jaeger v1.11.2 // indirect
 	go.opentelemetry.io/otel/exporters/zipkin v1.11.2 // indirect
 	go.opentelemetry.io/otel/sdk v1.15.1 // indirect

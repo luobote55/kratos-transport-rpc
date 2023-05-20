@@ -3,8 +3,8 @@ package mqtt
 import (
 	"context"
 	"github.com/google/uuid"
-	"kratos-transport-rpc/broker"
-	"kratos-transport-rpc/broker/mqtt"
+	"github.com/luobote55/kratos-transport-rpc/broker"
+	"github.com/luobote55/kratos-transport-rpc/broker/mqtt"
 	"net/url"
 	"strings"
 	"sync"

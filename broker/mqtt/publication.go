@@ -1,6 +1,6 @@
 package mqtt
 
-import "kratos-transport-rpc/broker"
+import "github.com/luobote55/kratos-transport-rpc/broker"
 
 type publication struct {
 	topic string

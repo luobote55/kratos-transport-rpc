@@ -2,7 +2,7 @@ package mqtt
 
 import (
 	mqtt "github.com/eclipse/paho.mqtt.golang"
-	"kratos-transport-rpc/broker"
+	"github.com/luobote55/kratos-transport-rpc/broker"
 )
 
 type subscriber struct {

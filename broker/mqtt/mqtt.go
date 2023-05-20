@@ -1,7 +1,7 @@
 package mqtt
 
 import (
-	"kratos-transport-rpc/broker"
+	"github.com/luobote55/kratos-transport-rpc/broker"
 	"strings"
 	"sync"
 	"time"
