@@ -7,7 +7,8 @@ replace github.com/luobote55/kratos-transport-rpc => ../../
 require (
 	github.com/go-kratos/kratos/v2 v2.6.2
 	github.com/google/uuid v1.3.0
-	github.com/luobote55/kratos-transport-rpc v0.0.1
+	github.com/luobote55/kratos-transport-rpc v0.0.3
+	github.com/luobote55/kratos-transport-rpc/broker/mqtt v0.0.0-20230520160310-fbd1f2dc2eea
 )
 
 require (
