@@ -4,11 +4,16 @@ go 1.20
 
 replace github.com/luobote55/kratos-transport-rpc => ../../
 
+replace github.com/luobote55/kratos-transport-rpc/transport/mqtt => ../../transport/mqtt
+
+replace github.com/luobote55/kratos-transport-rpc/broker/mqtt => ../../broker/mqtt
+
 require (
 	github.com/eclipse/paho.mqtt.golang v1.4.2
 	github.com/go-kratos/kratos/v2 v2.6.2
-	github.com/luobote55/kratos-transport-rpc v0.0.4
+	github.com/luobote55/kratos-transport-rpc v0.0.5
 	github.com/pkg/errors v0.9.1
+	google.golang.org/protobuf v1.30.0
 )
 
 require (
@@ -26,5 +31,4 @@ require (
 	golang.org/x/net v0.10.0 // indirect
 	golang.org/x/sync v0.0.0-20220513210516-0976fa681c29 // indirect
 	golang.org/x/sys v0.8.0 // indirect
-	google.golang.org/protobuf v1.30.0 // indirect
 )
