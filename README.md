@@ -9,7 +9,10 @@ todo：
 3. kratos proto server ./xxx.proto   --->   xxx_mqtt.pb.go
 
 编译：
-go test .\transport\mqtt\ -v
+protoc --proto_path=./broker --proto_path=./third_party broker.proto --go_out=./broker
+protoc --proto_path=./api/v1 --proto_path=./third_party greeter.proto --go_out=.
+cd .\transport\mqtt\  
+go test -v
 
 reference:
 [Kratos官方示例代码库](https://github.com/go-kratos/examples)

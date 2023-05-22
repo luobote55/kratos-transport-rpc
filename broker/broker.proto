@@ -2,8 +2,15 @@ syntax = "proto3";
 
 package api.proto;
 
-option go_package = "ems/ems-kit/broker;broker";
+import "google/protobuf/any.proto"; // 导入 Any 类型
+
+option go_package = "./;broker";
 
 message Headers {
   map<string, string> headers = 1;
+}
+
+message Message {
+  Headers Headers = 1; // metadata
+  google.protobuf.Any data = 2;  // 使用 Any 类型存储数据
 }

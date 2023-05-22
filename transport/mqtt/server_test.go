@@ -157,15 +157,8 @@ func TestBenchmarkBroker(t *testing.T) {
 	name := "RegisterSubscriberReq"
 	_ = srv.RegisterSubscriberReq(ctx, TestTopic, func(ctx context.Context, msg broker.Event) (broker.RespEvent, error) {
 		startTime := time.Now()
-		<-time.NewTicker(time.Millisecond * 1).C
-		//for {
-		//}
+		<-time.NewTicker(time.Millisecond * 10).C // process time
 		req := msg.Message().Body.(*v1.HelloRequest)
-
-		//		fmt.Println(req.Name)
-		//time.Sleep(100 * time.Microsecond)
-		//duration := time.Since(startTime)
-		//fmt.Println(int64(duration / 1000000))
 
 		megResp := broker.Message{
 			Headers: broker.Headers{},
@@ -221,7 +214,6 @@ func TestBenchmarkBroker(t *testing.T) {
 		for {
 			select {
 			case interval := <-c:
-				//				fmt.Printf(name+":%d  \n", interval/1000000)
 				*sum += interval
 				if *max <= interval {
 					*max = interval
