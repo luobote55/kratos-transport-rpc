@@ -4,10 +4,6 @@ go 1.20
 
 replace github.com/luobote55/kratos-transport-rpc => ../../
 
-replace github.com/luobote55/kratos-transport-rpc/transport/mqtt => ../../transport/mqtt
-
-replace github.com/luobote55/kratos-transport-rpc/broker/mqtt => ../../broker/mqtt
-
 require (
 	github.com/eclipse/paho.mqtt.golang v1.4.2
 	github.com/go-kratos/kratos/v2 v2.6.2
