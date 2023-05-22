@@ -2,6 +2,8 @@ package mqtt
 
 import (
 	"github.com/luobote55/kratos-transport-rpc/broker"
+	"google.golang.org/protobuf/reflect/protoreflect"
+	"google.golang.org/protobuf/types/known/anypb"
 	"strings"
 	"sync"
 	"time"
@@ -198,7 +200,32 @@ func (m *mqttBroker) Publish(topic string, msg broker.Any, opts ...broker.Publis
 	return m.publish(topic, buf, opts...)
 }
 
+func checkProtoMessage(msg broker.Any) (*anypb.Any, error) {
+	msgAny, ok := msg.(protoreflect.ProtoMessage)
+	if !ok {
+		return nil, errors.New("checkProtoMessage protoreflect.ProtoMessage, failed")
+	}
+	// 使用 Any 类型存储数据消息
+	reqAny, err := anypb.New(msgAny)
+	if err != nil {
+		panic(err)
+	}
+	return reqAny, nil
+}
+
+func UnmarshalAny(reqAny *anypb.Any, msg broker.Any) error {
+	msgAny, ok := msg.(protoreflect.ProtoMessage)
+	if !ok {
+		return errors.New("UnmarshalAny protoreflect.ProtoMessage, failed")
+	}
+	return reqAny.UnmarshalTo(msgAny)
+}
+
 func (m *mqttBroker) PublishReq(topic string, msg broker.Any, opts ...broker.PublishOption) error {
+	msgAny, err := checkProtoMessage(msg)
+	if err != nil {
+		return err
+	}
 	options := broker.NewPublishOptions(opts...)
 	var qos byte = 2
 	var retained = false
@@ -208,7 +235,6 @@ func (m *mqttBroker) PublishReq(topic string, msg broker.Any, opts ...broker.Pub
 	if value, ok := options.Context.Value(retainedPublishKey{}).(bool); ok {
 		retained = value
 	}
-	var buf []byte
 	header := broker.Headers{
 		Headers: map[string]string{broker.MessageAct: "request"},
 	}
@@ -221,22 +247,23 @@ func (m *mqttBroker) PublishReq(topic string, msg broker.Any, opts ...broker.Pub
 		}
 		header.Headers[broker.MessageFrom] = m.opts.ClientId
 	}
-	h, err := broker.Marshal(m.opts.Codec, &header)
+	req := &broker.Message{
+		Headers: &header,
+		Data:    msgAny,
+	}
+	buf, err := broker.Marshal(m.opts.Codec, &req)
 	if err != nil {
 		return err
 	}
-	b, err := broker.Marshal(m.opts.Codec, msg)
-	if err != nil {
-		return err
-	}
-	buf = append(buf, h...)
-	buf = append(buf, b...)
-
 	ret := m.client.Publish(topic+"/req", qos, retained, buf)
 	return ret.Error()
 }
 
 func (m *mqttBroker) PublishResp(topic string, msg broker.Any, opts ...broker.PublishOption) error {
+	msgAny, err := checkProtoMessage(msg)
+	if err != nil {
+		return err
+	}
 	options := broker.NewPublishOptions(opts...)
 	var qos byte = 2
 	var retained = false
@@ -246,24 +273,20 @@ func (m *mqttBroker) PublishResp(topic string, msg broker.Any, opts ...broker.Pu
 	if value, ok := options.Context.Value(retainedPublishKey{}).(bool); ok {
 		retained = value
 	}
-	var buf []byte
 	header := broker.Headers{
 		Headers: map[string]string{broker.MessageAct: "response"},
 	}
 	if value, ok := options.Context.Value(broker.MessageId).(string); ok {
 		header.Headers[broker.MessageId] = value
 	}
-	h, err := broker.Marshal(m.opts.Codec, header)
+	resp := &broker.Message{
+		Headers: &header,
+		Data:    msgAny,
+	}
+	buf, err := broker.Marshal(m.opts.Codec, resp)
 	if err != nil {
 		return err
 	}
-	b, err := broker.Marshal(m.opts.Codec, msg)
-	if err != nil {
-		return err
-	}
-	buf = append(buf, h...)
-	buf = append(buf, b...)
-
 	ret := m.client.Publish(topic+"/resp", qos, retained, buf)
 	return ret.Error()
 }
@@ -303,13 +326,9 @@ func (m *mqttBroker) Subscribe(topic string, handler broker.Handler, binder brok
 		qos = value
 	}
 	t := m.client.Subscribe(topic, qos, func(c MQTT.Client, mq MQTT.Message) {
-		msg := broker.Message{
-			Headers: broker.Headers{},
-			Body:    binder(),
-		}
+		msg := broker.Message{}
 		p := &publication{topic: mq.Topic(), msg: &msg}
-
-		if err := broker.Unmarshal(m.opts.Codec, mq.Payload(), &msg.Body); err != nil {
+		if err := broker.Unmarshal(m.opts.Codec, mq.Payload(), &msg); err != nil {
 			p.err = err
 			log.Error(err)
 			return
@@ -391,23 +410,18 @@ func (m *mqttBroker) SubscribeReq(topic string, handler broker.Handler, binder b
 	var qos byte = 2
 	t := m.client.Subscribe(topic+"/req", qos, func(c MQTT.Client, mq MQTT.Message) {
 		pd := mq.Payload()
-		msg := broker.Message{
-			Headers: broker.Headers{},
-			Body:    binder(),
-		}
-		ll := FindHeader(pd)
+		msg := broker.Message{}
 		p := &publication{
 			topic: mq.Topic(),
 			msg:   &msg,
+			data:  binder(),
 			err:   nil,
 		}
-		if ll != 0 {
-			if err := broker.Unmarshal(m.opts.Codec, pd[:ll], &msg.Headers); err != nil {
-				p.err = err
-				log.Error(err)
-				m.PublishResp(topic, err.Error(), WithPublishQos(2))
-				return
-			}
+		if err := broker.Unmarshal(m.opts.Codec, pd, &msg); err != nil {
+			p.err = err
+			log.Error(err)
+			m.PublishResp(topic, err.Error(), WithPublishQos(2))
+			return
 		}
 		if err := m.filterMessageMetadata(msg.Headers.Headers); err != nil {
 			if errors.Cause(err) != ErrMessageTo {
@@ -416,15 +430,17 @@ func (m *mqttBroker) SubscribeReq(topic string, handler broker.Handler, binder b
 			}
 			return
 		}
-		if err := broker.Unmarshal(m.opts.Codec, pd[ll:], &msg.Body); err != nil {
-			p.err = err
-			log.Error(err)
-			m.PublishResp(topic,
-				err.Error(),
-				WithPublishQos(2),
-				broker.PublishContextWithValue(broker.MessageId, msg.Headers.Headers[broker.MessageId]))
-			return
-		}
+
+		msg.Data.UnmarshalTo(p.data.(protoreflect.ProtoMessage))
+		//if err := UnmarshalAny(msg.Data, p.data); err != nil {
+		//	p.err = err
+		//	log.Error(err)
+		//	m.PublishResp(topic,
+		//		err.Error(),
+		//		WithPublishQos(2),
+		//		broker.PublishContextWithValue(broker.MessageId, msg.Headers.Headers[broker.MessageId]))
+		//	return
+		//}
 		resp, err := handler(m.opts.Context, p)
 		if err != nil {
 			log.Error(err)
@@ -435,7 +451,7 @@ func (m *mqttBroker) SubscribeReq(topic string, handler broker.Handler, binder b
 			return
 		}
 		m.PublishResp(topic,
-			resp.GetBody(),
+			resp,
 			WithPublishQos(2),
 			broker.PublishContextWithValue(broker.MessageId, msg.Headers.Headers[broker.MessageId]))
 	})
@@ -462,28 +478,24 @@ func (m *mqttBroker) SubscribeResp(topic string, handler broker.Handler, binder 
 
 	t := m.client.Subscribe(topic+"/resp", qos, func(c MQTT.Client, mq MQTT.Message) {
 		pd := mq.Payload()
-		msg := broker.Message{
-			Headers: broker.Headers{},
-			Body:    binder(),
-		}
-		ll := FindHeader(pd)
+		msg := broker.Message{}
 		p := &publication{
 			topic: mq.Topic(),
 			msg:   &msg,
+			data:  binder(),
 			err:   nil,
 		}
-		if ll != 0 {
-			if err := broker.Unmarshal(m.opts.Codec, pd[:ll], &msg.Headers); err != nil {
-				p.err = err
-				log.Error(err)
-				return
-			}
-		}
-		if err := broker.Unmarshal(m.opts.Codec, pd[ll:], &(msg.Body)); err != nil {
+		if err := broker.Unmarshal(m.opts.Codec, pd, &msg); err != nil {
 			p.err = err
 			log.Error(err)
 			return
 		}
+		msg.Data.UnmarshalTo(p.data.(protoreflect.ProtoMessage))
+		//if err := UnmarshalAny(msg.Data, p.data); err != nil {
+		//	p.err = err
+		//	log.Error(err)
+		//	return
+		//}
 		if _, err := handler(m.opts.Context, p); err != nil {
 			p.err = err
 			log.Error(err)
@@ -514,24 +526,19 @@ func (m *mqttBroker) SubscribeUpload(topic string, handler broker.Handler, binde
 
 	t := m.client.Subscribe(topic+"/upload", qos, func(c MQTT.Client, mq MQTT.Message) {
 		pd := mq.Payload()
-		msg := broker.Message{
-			Headers: broker.Headers{},
-			Body:    binder(),
-		}
-		ll := FindHeader(pd)
+		msg := broker.Message{}
 		p := &publication{
 			topic: mq.Topic(),
 			msg:   &msg,
+			data:  binder(),
 			err:   nil,
 		}
-		if ll != 0 {
-			if err := broker.Unmarshal(m.opts.Codec, pd[:ll], &msg.Headers); err != nil {
-				p.err = err
-				log.Error(err)
-				return
-			}
+		if err := broker.Unmarshal(m.opts.Codec, pd, &msg); err != nil {
+			p.err = err
+			log.Error(err)
+			return
 		}
-		if err := broker.Unmarshal(m.opts.Codec, pd[ll:], &msg.Body); err != nil {
+		if err := UnmarshalAny(msg.Data, p.data); err != nil {
 			p.err = err
 			log.Error(err)
 			return

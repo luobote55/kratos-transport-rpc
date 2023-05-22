@@ -6,7 +6,7 @@ import (
 
 type Any interface{}
 
-type Handler func(context.Context, Event) (RespEvent, error)
+type Handler func(context.Context, Event) (Any, error)
 
 type Binder func() Any
 
@@ -19,6 +19,7 @@ type Event interface {
 	Message() *Message
 	Ack() error
 	Error() error
+	Data() Any
 }
 
 type Subscriber interface {

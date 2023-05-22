@@ -143,15 +143,15 @@ func (s *Server) Stop(_ context.Context) error {
 	return s.Disconnect()
 }
 
-func (s *Server) PublishUpload(ctx context.Context, topic string, msg any, binder broker.Binder) (any, error) {
+func (s *Server) PublishUpload(ctx context.Context, topic string, msg broker.Any, binder broker.Binder) (broker.Any, error) {
 	err := s.Broker.PublishUpload(topic, msg, broker.WithPublishContext(ctx))
 	return nil, err
 }
 
-func (s *Server) PublishReq(ctx context.Context, topic string, msg any, binder broker.Binder) (any, error) {
+func (s *Server) PublishReq(ctx context.Context, topic string, msg broker.Any, binder broker.Binder) (broker.Any, error) {
 	_, ok := s.subscriberOpts.Load(topic)
 	if !ok {
-		handler := func(ctx1 context.Context, event broker.Event) (broker.RespEvent, error) {
+		handler := func(ctx1 context.Context, event broker.Event) (broker.Any, error) {
 			resp := event.Message()
 			value, ok := resp.Headers.Headers["Message-Id"]
 			if !ok {
@@ -161,14 +161,14 @@ func (s *Server) PublishReq(ctx context.Context, topic string, msg any, binder b
 			if !ok {
 				return nil, nil
 			}
-			rr := resp.GetBody()
-			ch.(chan any) <- rr
+			data := event.Data()
+			ch.(chan broker.Any) <- data
 			return nil, nil
 		}
 		s.RegisterSubscriberResp(ctx, topic, handler, binder)
 	}
 	msgId, _ := uuid.NewRandom()
-	ch := make(chan any, 1)
+	ch := make(chan broker.Any, 1)
 	s.responseMap.Store(msgId.String(), ch)
 	err := s.Broker.PublishReq(topic,
 		msg,

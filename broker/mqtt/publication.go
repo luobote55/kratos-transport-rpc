@@ -5,7 +5,12 @@ import "github.com/luobote55/kratos-transport-rpc/broker"
 type publication struct {
 	topic string
 	msg   *broker.Message
+	data  broker.Any
 	err   error
+}
+
+func (m *publication) Data() broker.Any {
+	return m.data
 }
 
 func (m *publication) Ack() error {

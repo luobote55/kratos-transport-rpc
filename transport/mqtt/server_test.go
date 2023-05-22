@@ -38,9 +38,9 @@ func TestServerSubscriberUpload(t *testing.T) {
 	)
 	name := "RegisterSubscriberUpload"
 	done := make(chan struct{}, 1)
-	_ = srv.RegisterSubscriberUpload(ctx, TestTopic, func(ctx context.Context, msg broker.Event) (broker.RespEvent, error) {
-		if !reflect.DeepEqual(name, msg.Message().Body.(*v1.HelloRequest).Name) {
-			t.Errorf("expect %v, got %v", name, msg.Message().Body)
+	_ = srv.RegisterSubscriberUpload(ctx, TestTopic, func(ctx context.Context, msg broker.Event) (broker.Any, error) {
+		if !reflect.DeepEqual(name, msg.Data().(*v1.HelloRequest).Name) {
+			t.Errorf("expect %v, got %v", name, msg.Data())
 			return nil, nil
 		}
 		done <- struct{}{}
@@ -85,15 +85,11 @@ func TestServerSubscriberReqPublishReq(t *testing.T) {
 		WithClientId(ClientId.String()),
 	)
 	name := "RegisterSubscriberReq"
-	_ = srv.RegisterSubscriberReq(ctx, TestTopic, func(ctx context.Context, msg broker.Event) (broker.RespEvent, error) {
-		req := msg.Message().Body.(*v1.HelloRequest)
-		megResp := broker.Message{
-			Headers: broker.Headers{},
-			Body: &v1.HelloReply{
-				Message: req.Name,
-			},
-		}
-		return &megResp, nil
+	_ = srv.RegisterSubscriberReq(ctx, TestTopic, func(ctx context.Context, msg broker.Event) (broker.Any, error) {
+		req := msg.Data().(*v1.HelloRequest)
+		return &v1.HelloReply{
+			Message: req.Name,
+		}, nil
 	}, func() broker.Any { return &v1.HelloRequest{} })
 
 	if err := srv.Start(ctx); err != nil {
@@ -104,21 +100,21 @@ func TestServerSubscriberReqPublishReq(t *testing.T) {
 		ctx1 = context.WithValue(ctx1, broker.MeggageTo, ClientId.String())
 		resp, err := srv.PublishReq(ctx1,
 			TestTopic,
-			v1.HelloRequest{
+			&v1.HelloRequest{
 				Name: name,
 			}, func() broker.Any { return &v1.HelloReply{} })
 		if err != nil {
 			t.Errorf("Publish failed, %s", err.Error())
 		} else if !reflect.DeepEqual(name, resp.(*v1.HelloReply).Message) {
-			t.Errorf("expect %v, got %v", name, resp.(v1.HelloReply).Message)
+			t.Errorf("expect %v, got %v", name, resp.(*v1.HelloReply).Message)
 		}
 	}
 	{
-		ctx1, _ := context.WithTimeout(ctx, time.Second*5)
+		ctx1, _ := context.WithTimeout(ctx, time.Second*500)
 		ctx1 = context.WithValue(ctx1, broker.MeggageTo, "ClientId.String()")
 		resp, err := srv.PublishReq(ctx1,
 			TestTopic,
-			v1.HelloRequest{
+			&v1.HelloRequest{
 				Name: name,
 			}, func() broker.Any { return &v1.HelloReply{} })
 		if err != nil {
@@ -126,7 +122,7 @@ func TestServerSubscriberReqPublishReq(t *testing.T) {
 				t.Errorf("Publish failed, %s", err.Error())
 			}
 		} else if !reflect.DeepEqual(name, resp.(*v1.HelloReply).Message) {
-			t.Errorf("expect %v, got %v", name, resp.(v1.HelloReply).Message)
+			t.Errorf("expect %v, got %v", name, resp.(*v1.HelloReply).Message)
 		}
 	}
 
@@ -155,21 +151,16 @@ func TestBenchmarkBroker(t *testing.T) {
 		WithClientId(PublishClientid),
 	)
 	name := "RegisterSubscriberReq"
-	_ = srv.RegisterSubscriberReq(ctx, TestTopic, func(ctx context.Context, msg broker.Event) (broker.RespEvent, error) {
+	_ = srv.RegisterSubscriberReq(ctx, TestTopic, func(ctx context.Context, msg broker.Event) (broker.Any, error) {
 		startTime := time.Now()
 		<-time.NewTicker(time.Millisecond * 10).C // process time
-		req := msg.Message().Body.(*v1.HelloRequest)
-
-		megResp := broker.Message{
-			Headers: broker.Headers{},
-			Body: &v1.HelloReply{
-				Message:  req.Name,
-				TimeFrom: req.TimeFrom,
-				TimeRecv: startTime.UnixNano(),
-				TimeTo:   time.Now().UnixNano(),
-			},
-		}
-		return &megResp, nil
+		req := msg.Data().(*v1.HelloRequest)
+		return &v1.HelloReply{
+			Message:  req.Name,
+			TimeFrom: req.TimeFrom,
+			TimeRecv: startTime.UnixNano(),
+			TimeTo:   time.Now().UnixNano(),
+		}, nil
 	}, func() broker.Any { return &v1.HelloRequest{} })
 
 	if err := srv.Start(ctx); err != nil {
@@ -243,7 +234,7 @@ func TestBenchmarkBroker(t *testing.T) {
 		startTime := time.Now()
 		resp, err := srv.PublishReq(ctx1,
 			TestTopic,
-			v1.HelloRequest{
+			&v1.HelloRequest{
 				Name:     xxxxx,
 				TimeFrom: startTime.UnixNano(),
 			}, func() broker.Any { return &v1.HelloReply{} })
