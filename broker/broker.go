@@ -8,7 +8,7 @@ type Any interface{}
 
 type Handler func(context.Context, Event) (Any, error)
 
-type Binder func() Any
+type Binder func(string) Any
 
 type RespEvent interface {
 	GetBody() Any

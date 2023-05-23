@@ -5,6 +5,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/luobote55/kratos-transport-rpc/broker"
 	"github.com/luobote55/kratos-transport-rpc/broker/mqtt"
+	"github.com/pkg/errors"
 	"net/url"
 	"strings"
 	"sync"
@@ -118,12 +119,6 @@ func (s *Server) Start(ctx context.Context) error {
 		return nil
 	}
 
-	//s.err = s.Init()
-	//if s.err != nil {
-	//	log.Errorf("[mqtt] init broker failed: [%s]", s.err.Error())
-	//	return s.err
-	//}
-	//
 	s.err = s.ConnectRetry()
 	if s.err != nil {
 		return s.err
@@ -153,7 +148,7 @@ func (s *Server) PublishReq(ctx context.Context, topic string, msg broker.Any, b
 	if !ok {
 		handler := func(ctx1 context.Context, event broker.Event) (broker.Any, error) {
 			resp := event.Message()
-			value, ok := resp.Headers.Headers["Message-Id"]
+			value, ok := resp.Headers.Headers[broker.MessageId]
 			if !ok {
 				return nil, nil
 			}
@@ -162,10 +157,23 @@ func (s *Server) PublishReq(ctx context.Context, topic string, msg broker.Any, b
 				return nil, nil
 			}
 			data := event.Data()
+			value, ok = resp.Headers.Headers[broker.Identifier]
+			if !ok {
+				return nil, nil
+			}
+			if value == broker.Failed {
+				ch.(chan broker.Any) <- data.(*broker.CommonReply).Msg
+				return nil, nil
+			}
 			ch.(chan broker.Any) <- data
 			return nil, nil
 		}
-		s.RegisterSubscriberResp(ctx, topic, handler, binder)
+		s.RegisterSubscriberResp(ctx, topic, handler, func(id string) broker.Any {
+			if id == broker.Failed {
+				return &broker.CommonReply{}
+			}
+			return binder(id)
+		})
 	}
 	msgId, _ := uuid.NewRandom()
 	ch := make(chan broker.Any, 1)
@@ -179,8 +187,12 @@ func (s *Server) PublishReq(ctx context.Context, topic string, msg broker.Any, b
 	}
 	select {
 	case <-ctx.Done():
+		s.responseMap.Delete(msgId.String())
 		return nil, ctx.Err()
 	case resp := <-ch:
+		if errStr, ok := resp.(string); ok {
+			return nil, errors.New(errStr)
+		}
 		return resp, nil
 	}
 	return nil, nil

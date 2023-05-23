@@ -187,6 +187,8 @@ const (
 	MessageId     = "Message-Id"
 	MessageFrom   = "Massage-From"
 	MeggageTo     = "Massage-To"
+	Identifier    = "Identifier"
+	Failed        = "Failed"
 	MaggageToken  = "Massage-Token"
 	ContextCodec  = "Context-Codec"
 	TimeStampFrom = "TimeStampFrom"

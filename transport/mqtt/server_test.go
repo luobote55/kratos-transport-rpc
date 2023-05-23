@@ -3,6 +3,7 @@ package mqtt
 import (
 	"context"
 	"fmt"
+	"github.com/go-kratos/kratos/v2/log"
 	"github.com/google/uuid"
 	v1 "github.com/luobote55/kratos-transport-rpc/api/v1"
 	"github.com/luobote55/kratos-transport-rpc/broker"
@@ -45,7 +46,7 @@ func TestServerSubscriberUpload(t *testing.T) {
 		}
 		done <- struct{}{}
 		return nil, nil
-	}, func() broker.Any { return &v1.HelloRequest{} })
+	}, func(id string) broker.Any { return &v1.HelloRequest{} })
 
 	if err := srv.Start(ctx); err != nil {
 		panic(err)
@@ -73,6 +74,10 @@ func TestServerSubscriberUpload(t *testing.T) {
 }
 
 func TestServerSubscriberReqPublishReq(t *testing.T) {
+	log.With(log.NewStdLogger(os.Stdout),
+		"ts", log.DefaultTimestamp,
+		"caller", log.DefaultCaller,
+	)
 	interrupt := make(chan os.Signal, 1)
 	signal.Notify(interrupt, syscall.SIGHUP, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT)
 
@@ -90,7 +95,7 @@ func TestServerSubscriberReqPublishReq(t *testing.T) {
 		return &v1.HelloReply{
 			Message: req.Name,
 		}, nil
-	}, func() broker.Any { return &v1.HelloRequest{} })
+	}, func(id string) broker.Any { return &v1.HelloRequest{} })
 
 	if err := srv.Start(ctx); err != nil {
 		panic(err)
@@ -98,11 +103,12 @@ func TestServerSubscriberReqPublishReq(t *testing.T) {
 	{
 		ctx1, _ := context.WithTimeout(ctx, time.Second*5)
 		ctx1 = context.WithValue(ctx1, broker.MeggageTo, ClientId.String())
+		ctx1 = context.WithValue(ctx1, broker.Identifier, "HelloRequest")
 		resp, err := srv.PublishReq(ctx1,
 			TestTopic,
 			&v1.HelloRequest{
 				Name: name,
-			}, func() broker.Any { return &v1.HelloReply{} })
+			}, func(id string) broker.Any { return &v1.HelloReply{} })
 		if err != nil {
 			t.Errorf("Publish failed, %s", err.Error())
 		} else if !reflect.DeepEqual(name, resp.(*v1.HelloReply).Message) {
@@ -112,11 +118,12 @@ func TestServerSubscriberReqPublishReq(t *testing.T) {
 	{
 		ctx1, _ := context.WithTimeout(ctx, time.Second*500)
 		ctx1 = context.WithValue(ctx1, broker.MeggageTo, "ClientId.String()")
+		ctx1 = context.WithValue(ctx1, broker.Identifier, "HelloRequest")
 		resp, err := srv.PublishReq(ctx1,
 			TestTopic,
 			&v1.HelloRequest{
 				Name: name,
-			}, func() broker.Any { return &v1.HelloReply{} })
+			}, func(id string) broker.Any { return &v1.HelloReply{} })
 		if err != nil {
 			if err.Error() != "context deadline exceeded" {
 				t.Errorf("Publish failed, %s", err.Error())
@@ -161,7 +168,12 @@ func TestBenchmarkBroker(t *testing.T) {
 			TimeRecv: startTime.UnixNano(),
 			TimeTo:   time.Now().UnixNano(),
 		}, nil
-	}, func() broker.Any { return &v1.HelloRequest{} })
+	}, func(identifier string) broker.Any {
+		if identifier == "HelloRequest" {
+			return &v1.HelloRequest{}
+		}
+		return nil
+	})
 
 	if err := srv.Start(ctx); err != nil {
 		panic(err)
@@ -231,30 +243,32 @@ func TestBenchmarkBroker(t *testing.T) {
 	testCase := func() {
 		ctx1, _ := context.WithTimeout(ctx, time.Second*10)
 		ctx1 = context.WithValue(ctx1, broker.MeggageTo, SubscriberReqClientid)
+		ctx1 = context.WithValue(ctx1, broker.Identifier, "HelloRequest")
 		startTime := time.Now()
 		resp, err := srv.PublishReq(ctx1,
 			TestTopic,
 			&v1.HelloRequest{
 				Name:     xxxxx,
 				TimeFrom: startTime.UnixNano(),
-			}, func() broker.Any { return &v1.HelloReply{} })
+			}, func(id string) broker.Any { return &v1.HelloReply{} })
 		pubCount++
 		stopTime := time.Now()
 		if err != nil {
 			t.Errorf("Publish failed, %s / %d", err.Error(), pubCount)
 		} else if !reflect.DeepEqual(xxxxx, resp.(*v1.HelloReply).Message) {
 			t.Errorf("expect %v, got %v", name, resp.(*v1.HelloReply).Message)
+		} else {
+			//duration := time.Since(startTime)
+			time1 := int64(stopTime.UnixNano() - startTime.UnixNano())
+			time2 := int64(resp.(*v1.HelloReply).TimeRecv - startTime.UnixNano())
+			time3 := int64(resp.(*v1.HelloReply).TimeTo - resp.(*v1.HelloReply).TimeRecv)
+			time4 := int64(stopTime.UnixNano() - resp.(*v1.HelloReply).TimeTo)
+			//		fmt.Printf("%d,%d,%d,%d\n", time1/1000000, time2/1000000, time3/1000000, time4/1000000)
+			chantimeInterval <- time1
+			chantimeIntervalFrom <- time2
+			chantimeIntervalRecv <- time3
+			chantimeIntervalTo <- time4
 		}
-		//duration := time.Since(startTime)
-		time1 := int64(stopTime.UnixNano() - startTime.UnixNano())
-		time2 := int64(resp.(*v1.HelloReply).TimeRecv - startTime.UnixNano())
-		time3 := int64(resp.(*v1.HelloReply).TimeTo - resp.(*v1.HelloReply).TimeRecv)
-		time4 := int64(stopTime.UnixNano() - resp.(*v1.HelloReply).TimeTo)
-		//		fmt.Printf("%d,%d,%d,%d\n", time1/1000000, time2/1000000, time3/1000000, time4/1000000)
-		chantimeInterval <- time1
-		chantimeIntervalFrom <- time2
-		chantimeIntervalRecv <- time3
-		chantimeIntervalTo <- time4
 	}
 
 	go func() {

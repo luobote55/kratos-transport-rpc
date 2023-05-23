@@ -14,3 +14,8 @@ message Message {
   Headers Headers = 1; // metadata
   google.protobuf.Any data = 2;  // 使用 Any 类型存储数据
 }
+
+message CommonReply {
+  int32 status = 1;
+  string msg = 2;
+}
