@@ -2,8 +2,6 @@ module github.com/luobote55/kratos-transport-rpc/transport/mqtt
 
 go 1.20
 
-replace github.com/luobote55/kratos-transport-rpc => ../../
-
 require (
 	github.com/go-kratos/kratos/v2 v2.6.2
 	github.com/google/uuid v1.3.0
