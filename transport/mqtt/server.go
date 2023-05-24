@@ -273,7 +273,7 @@ func (s *Server) doRegisterSubscriberResp(topic string, handler broker.Handler, 
 }
 
 func (s *Server) doRegisterSubscriberUpload(topic string, handler broker.Handler, binder broker.Binder, opts ...broker.SubscribeOption) error {
-	sub, err := s.Subscribe(topic, handler, binder, opts...)
+	sub, err := s.SubscribeUpload(topic, handler, binder, opts...)
 	if err != nil {
 		return err
 	}

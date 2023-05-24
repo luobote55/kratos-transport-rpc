@@ -604,6 +604,10 @@ func (m *mqttBroker) SubscribeUpload(topic string, handler broker.Handler, binde
 	t := m.client.Subscribe(topic+"/upload", qos, func(c MQTT.Client, mq MQTT.Message) {
 		pd := mq.Payload()
 		msg := broker.Message{}
+		if err := broker.Unmarshal(m.opts.Codec, pd, &msg); err != nil {
+			log.Error(err)
+			return
+		}
 		id, ok := msg.Headers.Headers[broker.Identifier]
 		if !ok && id == "" {
 			m.logFilter.Error(broker.Identifier, "massage with none metadata Identifier")
@@ -615,12 +619,7 @@ func (m *mqttBroker) SubscribeUpload(topic string, handler broker.Handler, binde
 			data:  binder(id),
 			err:   nil,
 		}
-		if err := broker.Unmarshal(m.opts.Codec, pd, &msg); err != nil {
-			p.err = err
-			log.Error(err)
-			return
-		}
-		if err := UnmarshalAny(msg.Data, p.data); err != nil {
+		if err := msg.Data.UnmarshalTo(p.data.(protoreflect.ProtoMessage)); err != nil {
 			p.err = err
 			log.Error(err)
 			return

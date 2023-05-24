@@ -52,7 +52,7 @@ func TestServerSubscriberUpload(t *testing.T) {
 		panic(err)
 	}
 
-	if err := srv.Publish(TestTopic, v1.HelloRequest{Name: name}); err != nil {
+	if err := srv.PublishUpload(TestTopic, v1.HelloRequest{Name: name}); err != nil {
 		t.Errorf("Publish failed, %s", err.Error())
 	}
 	ctx1, _ := context.WithTimeout(ctx, time.Second*10)
