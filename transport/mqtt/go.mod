@@ -2,12 +2,17 @@ module github.com/luobote55/kratos-transport-rpc/transport/mqtt
 
 go 1.20
 
+//replace github.com/luobote55/kratos-transport-rpc/broker/mqtt => ../../broker/mqtt
+//
 require (
 	github.com/go-kratos/kratos/v2 v2.6.2
 	github.com/google/uuid v1.3.0
-	github.com/luobote55/kratos-transport-rpc v0.0.6
-	github.com/luobote55/kratos-transport-rpc/broker/mqtt v0.0.0-20230524062109-c1e7c4950d10
 	github.com/pkg/errors v0.9.1
+)
+
+require (
+	github.com/luobote55/kratos-transport-rpc v0.0.6
+	github.com/luobote55/kratos-transport-rpc/broker/mqtt v0.0.0-20230524063300-52482eece5d5
 )
 
 require (
