@@ -52,7 +52,7 @@ func TestServerSubscriberUpload(t *testing.T) {
 		panic(err)
 	}
 
-	if err := srv.PublishUpload(TestTopic, v1.HelloRequest{Name: name}); err != nil {
+	if _, err := srv.PublishUpload(ctx, TestTopic, &v1.HelloRequest{Name: name}, func(id string) broker.Any { return &v1.HelloReply{} }); err != nil {
 		t.Errorf("Publish failed, %s", err.Error())
 	}
 	ctx1, _ := context.WithTimeout(ctx, time.Second*10)
