@@ -399,18 +399,20 @@ func (m *mqttBroker) Subscribe(topic string, handler broker.Handler, binder brok
 		qos = value
 	}
 	t := m.client.Subscribe(topic, qos, func(c MQTT.Client, mq MQTT.Message) {
-		msg := broker.Message{}
-		p := &publication{topic: mq.Topic(), msg: &msg}
-		if err := broker.Unmarshal(m.opts.Codec, mq.Payload(), &msg); err != nil {
-			p.err = err
-			log.Error(err)
-			return
-		}
+		go func() {
+			msg := broker.Message{}
+			p := &publication{topic: mq.Topic(), msg: &msg}
+			if err := broker.Unmarshal(m.opts.Codec, mq.Payload(), &msg); err != nil {
+				p.err = err
+				log.Error(err)
+				return
+			}
 
-		if _, err := handler(m.opts.Context, p); err != nil {
-			p.err = err
-			log.Error(err)
-		}
+			if _, err := handler(m.opts.Context, p); err != nil {
+				p.err = err
+				log.Error(err)
+			}
+		}()
 	})
 
 	if rs, err := checkClientToken(t); !rs {
@@ -482,53 +484,56 @@ func (m *mqttBroker) SubscribeReq(topic string, handler broker.Handler, binder b
 	options := broker.NewSubscribeOptions(opts...)
 	var qos byte = 2
 	t := m.client.Subscribe(topic+"/req", qos, func(c MQTT.Client, mq MQTT.Message) {
-		pd := mq.Payload()
-		msg := broker.Message{}
-		if err := broker.Unmarshal(m.opts.Codec, pd, &msg); err != nil {
-			m.logFilter.Error("SubscribeReq Unmarshal", "SubscribeReq Unmarshal failed:"+topic)
-			return
-		}
-		id, ok := msg.Headers.Headers[broker.Identifier]
-		if !ok && id == "" {
-			m.logFilter.Error(broker.Identifier+"Resp", "SubscribeReq massage with none metadata Identifier")
-			return
-		}
-		if err := m.filterMessageMetadata(msg.Headers.Headers); err != nil {
-			if errors.Cause(err) != ErrMessageTo {
-				m.PublishCommErrorResp(topic, err.Error(), WithPublishQos(2))
+		go func() {
+			pd := mq.Payload()
+			msg := broker.Message{}
+			if err := broker.Unmarshal(m.opts.Codec, pd, &msg); err != nil {
+				m.logFilter.Error("SubscribeReq Unmarshal", "SubscribeReq Unmarshal failed:"+topic)
 				return
 			}
-			return
-		}
-		p := &publication{
-			topic: mq.Topic(),
-			msg:   &msg,
-			data:  binder(id),
-			err:   nil,
-		}
-		if err := msg.Data.UnmarshalTo(p.data.(protoreflect.ProtoMessage)); err != nil {
-			log.Error(err)
-			m.PublishCommErrorResp(topic,
-				err.Error(),
+			id, ok := msg.Headers.Headers[broker.Identifier]
+			if !ok && id == "" {
+				m.logFilter.Error(broker.Identifier+"Resp", "SubscribeReq massage with none metadata Identifier")
+				return
+			}
+			if err := m.filterMessageMetadata(msg.Headers.Headers); err != nil {
+				if errors.Cause(err) != ErrMessageTo {
+					m.PublishCommErrorResp(topic, err.Error(), WithPublishQos(2))
+					return
+				}
+				return
+			}
+			p := &publication{
+				topic: mq.Topic(),
+				msg:   &msg,
+				data:  binder(id),
+				err:   nil,
+			}
+			if err := msg.Data.UnmarshalTo(p.data.(protoreflect.ProtoMessage)); err != nil {
+				log.Error(err)
+				m.PublishCommErrorResp(topic,
+					err.Error(),
+					WithPublishQos(2),
+					broker.PublishContextWithValue(broker.MessageId, msg.Headers.Headers[broker.MessageId]))
+				return
+			}
+			resp, err := handler(m.opts.Context, p)
+			if err != nil {
+				log.Error(err)
+				m.PublishCommErrorResp(topic,
+					err.Error(),
+					WithPublishQos(2),
+					broker.PublishContextWithValue(broker.MessageId, msg.Headers.Headers[broker.MessageId]))
+				return
+			}
+			m.PublishResp(topic,
+				resp,
 				WithPublishQos(2),
-				broker.PublishContextWithValue(broker.MessageId, msg.Headers.Headers[broker.MessageId]))
-			return
-		}
-		resp, err := handler(m.opts.Context, p)
-		if err != nil {
-			log.Error(err)
-			m.PublishCommErrorResp(topic,
-				err.Error(),
-				WithPublishQos(2),
-				broker.PublishContextWithValue(broker.MessageId, msg.Headers.Headers[broker.MessageId]))
-			return
-		}
-		m.PublishResp(topic,
-			resp,
-			WithPublishQos(2),
-			broker.PublishContextWithValue(broker.MessageId, msg.Headers.Headers[broker.MessageId]),
-			broker.PublishContextWithValue(broker.Identifier, msg.Headers.Headers[broker.Identifier]))
+				broker.PublishContextWithValue(broker.MessageId, msg.Headers.Headers[broker.MessageId]),
+				broker.PublishContextWithValue(broker.Identifier, msg.Headers.Headers[broker.Identifier]))
+		}()
 	})
+
 	if rs, err := checkClientToken(t); !rs {
 		return nil, err
 	}
@@ -551,32 +556,34 @@ func (m *mqttBroker) SubscribeResp(topic string, handler broker.Handler, binder 
 	}
 
 	t := m.client.Subscribe(topic+"/resp", qos, func(c MQTT.Client, mq MQTT.Message) {
-		pd := mq.Payload()
-		msg := broker.Message{}
-		if err := broker.Unmarshal(m.opts.Codec, pd, &msg); err != nil {
-			log.Error(err)
-			return
-		}
-		id, ok := msg.Headers.Headers[broker.Identifier]
-		if !ok && id == "" {
-			m.logFilter.Error(broker.Identifier+"Resp", "SubscribeResp massage with none metadata Identifier")
-			return
-		}
-		p := &publication{
-			topic: mq.Topic(),
-			msg:   &msg,
-			data:  binder(id),
-			err:   nil,
-		}
-		if err := msg.Data.UnmarshalTo(p.data.(protoreflect.ProtoMessage)); err != nil {
-			p.err = err
-			log.Error(err)
-			return
-		}
-		if _, err := handler(m.opts.Context, p); err != nil {
-			p.err = err
-			log.Error(err)
-		}
+		go func() {
+			pd := mq.Payload()
+			msg := broker.Message{}
+			if err := broker.Unmarshal(m.opts.Codec, pd, &msg); err != nil {
+				log.Error(err)
+				return
+			}
+			id, ok := msg.Headers.Headers[broker.Identifier]
+			if !ok && id == "" {
+				m.logFilter.Error(broker.Identifier+"Resp", "SubscribeResp massage with none metadata Identifier")
+				return
+			}
+			p := &publication{
+				topic: mq.Topic(),
+				msg:   &msg,
+				data:  binder(id),
+				err:   nil,
+			}
+			if err := msg.Data.UnmarshalTo(p.data.(protoreflect.ProtoMessage)); err != nil {
+				p.err = err
+				log.Error(err)
+				return
+			}
+			if _, err := handler(m.opts.Context, p); err != nil {
+				p.err = err
+				log.Error(err)
+			}
+		}()
 	})
 
 	if rs, err := checkClientToken(t); !rs {
@@ -602,32 +609,34 @@ func (m *mqttBroker) SubscribeUpload(topic string, handler broker.Handler, binde
 	}
 
 	t := m.client.Subscribe(topic+"/upload", qos, func(c MQTT.Client, mq MQTT.Message) {
-		pd := mq.Payload()
-		msg := broker.Message{}
-		if err := broker.Unmarshal(m.opts.Codec, pd, &msg); err != nil {
-			log.Error(err)
-			return
-		}
-		id, ok := msg.Headers.Headers[broker.Identifier]
-		if !ok && id == "" {
-			m.logFilter.Error(broker.Identifier, "massage with none metadata Identifier")
-			return
-		}
-		p := &publication{
-			topic: mq.Topic(),
-			msg:   &msg,
-			data:  binder(id),
-			err:   nil,
-		}
-		if err := msg.Data.UnmarshalTo(p.data.(protoreflect.ProtoMessage)); err != nil {
-			p.err = err
-			log.Error(err)
-			return
-		}
-		if _, err := handler(m.opts.Context, p); err != nil {
-			p.err = err
-			log.Error(err)
-		}
+		go func() {
+			pd := mq.Payload()
+			msg := broker.Message{}
+			if err := broker.Unmarshal(m.opts.Codec, pd, &msg); err != nil {
+				log.Error(err)
+				return
+			}
+			id, ok := msg.Headers.Headers[broker.Identifier]
+			if !ok && id == "" {
+				m.logFilter.Error(broker.Identifier, "massage with none metadata Identifier")
+				return
+			}
+			p := &publication{
+				topic: mq.Topic(),
+				msg:   &msg,
+				data:  binder(id),
+				err:   nil,
+			}
+			if err := msg.Data.UnmarshalTo(p.data.(protoreflect.ProtoMessage)); err != nil {
+				p.err = err
+				log.Error(err)
+				return
+			}
+			if _, err := handler(m.opts.Context, p); err != nil {
+				p.err = err
+				log.Error(err)
+			}
+		}()
 	})
 
 	if rs, err := checkClientToken(t); !rs {
