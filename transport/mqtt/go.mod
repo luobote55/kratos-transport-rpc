@@ -12,7 +12,7 @@ require (
 
 require (
 	github.com/luobote55/kratos-transport-rpc v0.0.6
-	github.com/luobote55/kratos-transport-rpc/broker/mqtt v0.0.0-20230524063300-52482eece5d5
+	github.com/luobote55/kratos-transport-rpc/broker/mqtt v0.0.0-20230526015746-83a9f4773d59
 )
 
 require (
