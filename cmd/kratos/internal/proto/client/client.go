@@ -91,6 +91,7 @@ func generate(proto string, args []string) error {
 	inputExt := []string{
 		"--proto_path=" + base.KratosMod(),
 		"--proto_path=" + filepath.Join(base.KratosMod(), "third_party"),
+		"--proto_path=./fourth_party",
 		"--go_out=paths=source_relative:.",
 		"--go-grpc_out=paths=source_relative:.",
 		"--go-http_out=paths=source_relative:.",

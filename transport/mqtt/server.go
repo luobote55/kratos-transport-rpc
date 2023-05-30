@@ -15,11 +15,13 @@ import (
 	"github.com/go-kratos/kratos/v2/transport"
 )
 
+const SupportPackageIsVersion1 = true
+
 type Handler func(ctx context.Context, req interface{}) (interface{}, error)
 
 // /sys/[ tenantid ]/[ sn ]    + /service/[ deviceType ]
 func (s *Server) RegRouteUpload(topic string, r *Router) {
-	s.RegisterSubscriberUpload(wrapper{}, s.topicPre+topic, func(ctx context.Context, msg broker.Event) (broker.Any, error) {
+	s.RegisterSubscriberUpload(context.Background(), s.topicPre+topic, func(ctx context.Context, msg broker.Event) (broker.Any, error) {
 		id := msg.Message().Headers.Headers[broker.Identifier]
 		return r.route[id].Handler(ctx, msg.Data())
 	}, func(id string) broker.Any {
@@ -32,7 +34,7 @@ func (s *Server) RegRouteUpload(topic string, r *Router) {
 }
 
 func (s *Server) RegRouteReq(topic string, r *Router) {
-	s.RegisterSubscriberReq(wrapper{}, s.topicPre+topic, func(ctx context.Context, msg broker.Event) (broker.Any, error) {
+	s.RegisterSubscriberReq(context.Background(), s.topicPre+topic, func(ctx context.Context, msg broker.Event) (broker.Any, error) {
 		id := msg.Message().Headers.Headers[broker.Identifier]
 		return r.route[id].Handler(ctx, msg.Data())
 	}, func(id string) broker.Any {
@@ -45,7 +47,7 @@ func (s *Server) RegRouteReq(topic string, r *Router) {
 }
 
 func (s *Server) RegReq(prefix, topic string, handler Handler, binder broker.Binder) {
-	s.RegisterSubscriberReq(wrapper{}, prefix+topic, func(ctx context.Context, msg broker.Event) (broker.Any, error) {
+	s.RegisterSubscriberReq(context.Background(), prefix+topic, func(ctx context.Context, msg broker.Event) (broker.Any, error) {
 		resp, err := handler(ctx, msg.Data())
 		if err != nil {
 			return nil, err
@@ -56,7 +58,7 @@ func (s *Server) RegReq(prefix, topic string, handler Handler, binder broker.Bin
 }
 
 func (s *Server) RegResp(prefix, topic string, handler Handler, binder broker.Binder) {
-	s.RegisterSubscriber(wrapper{}, prefix+topic, func(ctx context.Context, msg broker.Event) (broker.Any, error) {
+	s.RegisterSubscriber(context.Background(), prefix+topic, func(ctx context.Context, msg broker.Event) (broker.Any, error) {
 		_, err := handler(ctx, msg.Data())
 		return nil, err
 	}, binder)
@@ -64,7 +66,7 @@ func (s *Server) RegResp(prefix, topic string, handler Handler, binder broker.Bi
 }
 
 func (s *Server) RegUpload(prefix, topic string, handler Handler, binder broker.Binder) {
-	s.RegisterSubscriber(wrapper{}, prefix+topic, func(ctx context.Context, msg broker.Event) (broker.Any, error) {
+	s.RegisterSubscriber(context.Background(), prefix+topic, func(ctx context.Context, msg broker.Event) (broker.Any, error) {
 		_, err := handler(ctx, msg.Data())
 		return nil, err
 	}, binder)
@@ -123,7 +125,7 @@ func NewServer(opts ...ServerOption) *Server {
 		subscriberRespOpts:   sync.Map{},
 		subscriberUploadOpts: sync.Map{},
 		started:              false,
-		baseCtx:              wrapper{},
+		baseCtx:              context.Background(),
 		err:                  nil,
 	}
 
