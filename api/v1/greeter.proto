@@ -3,6 +3,7 @@ syntax = "proto3";
 package helloworld.v1;
 
 import "google/api/annotations.proto";
+import "gogogle/api/mqtt.proto";
 
 option go_package = "api/v1;v1";
 option java_multiple_files = true;
@@ -16,8 +17,10 @@ service Greeter {
     option (google.api.http) = {
       get: "/helloworld/{name}"
     };
+    option (gogogle.api.mqtt) = {
+      req: "SayHello"
+    };
   }
-
 }
 
 // The request message containing the user's name.

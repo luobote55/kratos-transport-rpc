@@ -1,0 +1,31 @@
+syntax = "proto3";
+
+package gogogle.api;
+
+import "google/protobuf/descriptor.proto";
+
+option cc_enable_arenas = true;
+option go_package = "/api/annotations;anns";
+option objc_class_prefix = "GAPI";
+
+
+extend google.protobuf.MethodOptions {
+  // See `HttpRule`.
+  MqttRule mqtt = 98756431;
+}
+
+message Mqtt {
+  repeated MqttRule rules = 1;
+  bool fully_decode_reserved_expansion = 2;
+}
+
+message MqttRule {
+  string selector = 1;
+  oneof pattern {
+    string req = 2;
+    string upload = 3;
+  }
+  string body = 4;
+  string response_body = 5;
+  repeated MqttRule additional_bindings = 6;
+}

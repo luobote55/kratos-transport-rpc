@@ -1,9 +1,9 @@
 package mqtt
 
 import (
+	"context"
 	"github.com/go-kratos/kratos/v2/transport"
 	"github.com/luobote55/kratos-transport-rpc/broker"
-	transport2 "github.com/luobote55/kratos-transport-rpc/transport"
 )
 
 const (
@@ -50,7 +50,7 @@ func (tr *Transport) PathTemplate() string {
 }
 
 // SetOperation sets the transport operation.
-func SetOperation(ctx transport2.Context, op string) {
+func SetOperation(ctx context.Context, op string) {
 	if tr, ok := transport.FromServerContext(ctx); ok {
 		if tr, ok := tr.(*Transport); ok {
 			tr.operation = op

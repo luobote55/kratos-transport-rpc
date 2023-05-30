@@ -2,6 +2,7 @@ package mqtt
 
 import (
 	"context"
+	"github.com/go-kratos/kratos/v2/middleware"
 	"github.com/google/uuid"
 	"github.com/luobote55/kratos-transport-rpc/broker"
 	"github.com/luobote55/kratos-transport-rpc/broker/mqtt"
@@ -13,6 +14,66 @@ import (
 	"github.com/go-kratos/kratos/v2/log"
 	"github.com/go-kratos/kratos/v2/transport"
 )
+
+type Handler func(ctx context.Context, req interface{}) (interface{}, error)
+
+// /sys/[ tenantid ]/[ sn ]    + /service/[ deviceType ]
+func (s *Server) RegRouteUpload(topic string, r *Router) {
+	s.RegisterSubscriberUpload(wrapper{}, s.topicPre+topic, func(ctx context.Context, msg broker.Event) (broker.Any, error) {
+		id := msg.Message().Headers.Headers[broker.Identifier]
+		return r.route[id].Handler(ctx, msg.Data())
+	}, func(id string) broker.Any {
+		value, ok := r.route[id]
+		if !ok {
+			return nil
+		}
+		return value.Binder(id)
+	})
+}
+
+func (s *Server) RegRouteReq(topic string, r *Router) {
+	s.RegisterSubscriberReq(wrapper{}, s.topicPre+topic, func(ctx context.Context, msg broker.Event) (broker.Any, error) {
+		id := msg.Message().Headers.Headers[broker.Identifier]
+		return r.route[id].Handler(ctx, msg.Data())
+	}, func(id string) broker.Any {
+		value, ok := r.route[id]
+		if !ok {
+			return nil
+		}
+		return value.Binder(id)
+	})
+}
+
+func (s *Server) RegReq(prefix, topic string, handler Handler, binder broker.Binder) {
+	s.RegisterSubscriberReq(wrapper{}, prefix+topic, func(ctx context.Context, msg broker.Event) (broker.Any, error) {
+		resp, err := handler(ctx, msg.Data())
+		if err != nil {
+			return nil, err
+		}
+		return resp, nil
+	}, binder)
+	return
+}
+
+func (s *Server) RegResp(prefix, topic string, handler Handler, binder broker.Binder) {
+	s.RegisterSubscriber(wrapper{}, prefix+topic, func(ctx context.Context, msg broker.Event) (broker.Any, error) {
+		_, err := handler(ctx, msg.Data())
+		return nil, err
+	}, binder)
+	return
+}
+
+func (s *Server) RegUpload(prefix, topic string, handler Handler, binder broker.Binder) {
+	s.RegisterSubscriber(wrapper{}, prefix+topic, func(ctx context.Context, msg broker.Event) (broker.Any, error) {
+		_, err := handler(ctx, msg.Data())
+		return nil, err
+	}, binder)
+	return
+}
+
+func (d *Server) Service(createDevice func(deviceId string)) {
+	d.CreateDevice = createDevice
+}
 
 var (
 	_ transport.Server     = (*Server)(nil)
@@ -44,6 +105,13 @@ type Server struct {
 
 	baseCtx context.Context
 	err     error
+
+	topicPre     string
+	md           []middleware.Middleware
+	af           []middleware.Middleware
+	CreateDevice func(deviceId string)
+
+	log log.Logger
 }
 
 func NewServer(opts ...ServerOption) *Server {
@@ -55,7 +123,7 @@ func NewServer(opts ...ServerOption) *Server {
 		subscriberRespOpts:   sync.Map{},
 		subscriberUploadOpts: sync.Map{},
 		started:              false,
-		baseCtx:              context.Background(),
+		baseCtx:              wrapper{},
 		err:                  nil,
 	}
 
@@ -309,4 +377,8 @@ func (s *Server) doRegisterSubscriberMap() error {
 		return true
 	})
 	return nil
+}
+
+func (s *Server) Route(prefix string) *Router {
+	return newRouter(prefix, s)
 }
