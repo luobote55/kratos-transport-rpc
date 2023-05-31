@@ -14,9 +14,9 @@ import (
 )
 
 const (
-	contextPackage       = protogen.GoImportPath("context")
-	transportMQTTPackage = protogen.GoImportPath("github.com/luobote55/kratos-transport-rpc/transport/mqtt")
-	middlewarePackage    = protogen.GoImportPath("github.com/go-kratos/kratos/v2/middleware")
+	contextPackage    = protogen.GoImportPath("context")
+	mqttPackage       = protogen.GoImportPath("github.com/luobote55/kratos-transport-rpc/transport/mqtt")
+	middlewarePackage = protogen.GoImportPath("github.com/go-kratos/kratos/v2/middleware")
 )
 
 var methodSets = make(map[string]int)
@@ -53,7 +53,7 @@ func generateFileContent(gen *protogen.Plugin, file *protogen.File, g *protogen.
 	g.P("// is compatible with the kratos package it is being compiled against.")
 	g.P("var _ = new(", contextPackage.Ident("Context"), ")")
 	g.P("var _ = new(", middlewarePackage.Ident("Middleware"), ")")
-	g.P("const _ = ", transportMQTTPackage.Ident("SupportPackageIsVersion1"))
+	g.P("const _ = ", mqttPackage.Ident("SupportPackageIsVersion1"))
 	g.P()
 
 	for _, service := range file.Services {
@@ -107,23 +107,6 @@ func hasMQTTRule(services []*protogen.Service) bool {
 	return false
 }
 
-/*
-	type HttpRule_Get struct {
-		// Maps to MQTT GET. Used for listing and getting information about
-		// resources.
-		Get string `protobuf:"bytes,2,opt,name=get,proto3,oneof"`
-	}
-
-	type HttpRule_Put struct {
-		// Maps to MQTT PUT. Used for replacing a resource.
-		Put string `protobuf:"bytes,3,opt,name=put,proto3,oneof"`
-	}
-
-	type HttpRule_Post struct {
-		// Maps to MQTT POST. Used for creating a resource or performing an action.
-		Post string `protobuf:"bytes,4,opt,name=post,proto3,oneof"`
-	}
-*/
 func buildMQTTRule(g *protogen.GeneratedFile, m *protogen.Method, rule *anns.MqttRule) *methodDesc {
 	var (
 		path         string

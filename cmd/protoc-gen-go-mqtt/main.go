@@ -21,6 +21,9 @@ protoc --proto_path=. --proto_path=./third_party --proto_path=./fourth_party --p
 protoc --proto_path=. --proto_path=./third_party --proto_path=./fourth_party --proto_path=C:\Users\panda\go\pkg\mod\github.com\go-kratos\kratos\v2@v2.6.2 --proto_path=C:\Users\panda\go\pkg\mod\github.com\go-kratos\kratos\v2@v2.6.2\third_party --go_out=paths=source_relative:. --go-mqtt_out=paths=source_relative:. --go-errors_out=paths=source_relative:. --openapi_out=paths=source_relative:. api/v1/greeter.proto
 protoc --proto_path=. --proto_path=./fourth_party --proto_path=C:\Users\panda\go\pkg\mod\github.com\go-kratos\kratos\v2@v2.6.2 --proto_path=C:\Users\panda\go\pkg\mod\github.com\go-kratos\kratos\v2@v2.6.2\third_party --go_out=paths=source_relative:. --go-mqtt_out=paths=source_relative:. --go-errors_out=paths=source_relative:. --openapi_out=paths=source_relative:. api/v1/greeter.proto
 
+protoc --proto_path=. --proto_path=./third_party --proto_path=./fourth_party --go_out=paths=source_relative:. --go-mqt_out=paths=source_relative:. --go-errors_out=paths=source_relative:. --openapi_out=paths=source_relative:. api/v1/greeter.proto
+
+
 */
 
 var (
