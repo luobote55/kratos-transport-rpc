@@ -3,23 +3,36 @@
 
 openapi: 3.0.3
 info:
-    title: Greeter API
-    description: The greeting service definition.
+    title: ""
     version: 0.0.1
 paths:
     /helloworld/{name}:
         get:
             tags:
-                - Greeter
+                - GreeterUpload
             description: Sends a greeting
-            operationId: Greeter_SayHello
+            operationId: GreeterUpload_Hello
             parameters:
                 - name: name
                   in: path
                   required: true
                   schema:
                     type: string
+                - name: message
+                  in: query
+                  schema:
+                    type: string
                 - name: timeFrom
+                  in: query
+                  schema:
+                    type: integer
+                    format: int64
+                - name: timeRecv
+                  in: query
+                  schema:
+                    type: integer
+                    format: int64
+                - name: timeTo
                   in: query
                   schema:
                     type: integer
@@ -80,3 +93,6 @@ components:
             description: 'The `Status` type defines a logical error model that is suitable for different programming environments, including REST APIs and RPC APIs. It is used by [gRPC](https://github.com/grpc). Each `Status` message contains three pieces of data: error code, error message, and error details. You can find out more about this error model and how to work with it in the [API Design Guide](https://cloud.google.com/apis/design/errors).'
 tags:
     - name: Greeter
+      description: The greeting service definition.
+    - name: GreeterUpload
+      description: The greeting service definition.

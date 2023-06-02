@@ -41,14 +41,14 @@ type serviceGenerateHelperInterface interface {
 	generateClientStruct(g *protogen.GeneratedFile, clientName string)
 	generateNewClientDefinitions(g *protogen.GeneratedFile, service *protogen.Service, clientName string)
 	generateUnimplementedServerType(gen *protogen.Plugin, file *protogen.File, g *protogen.GeneratedFile, service *protogen.Service)
-	generateServerFunctions(gen *protogen.Plugin, file *protogen.File, g *protogen.GeneratedFile, service *protogen.Service, serverType string, serviceDescVar string)
+	generateServerFunctions(gen *protogen.Plugin, file *protogen.File, g *protogen.GeneratedFile, service *protogen.Service, serverType string)
 	formatHandlerFuncName(service *protogen.Service, hname string) string
 }
 
 type serviceGenerateHelper struct{}
 
 func (serviceGenerateHelper) formatFullMethodSymbol(service *protogen.Service, method *protogen.Method) string {
-	return fmt.Sprintf("%s_%s_FullMethodName", service.GoName, method.GoName)
+	return fmt.Sprintf("%s_%s_Mqt_FullMethodName", service.GoName, method.GoName)
 }
 
 func (serviceGenerateHelper) genFullMethods(g *protogen.GeneratedFile, service *protogen.Service) {
@@ -64,7 +64,7 @@ func (serviceGenerateHelper) genFullMethods(g *protogen.GeneratedFile, service *
 
 func (serviceGenerateHelper) generateClientStruct(g *protogen.GeneratedFile, clientName string) {
 	g.P("type ", unexport(clientName), " struct {")
-	g.P("cc ", mqttPackage.Ident("ClientConnInterface"))
+	g.P("cc *", mqttPackage.Ident("Client"))
 	g.P("}")
 	g.P()
 }
@@ -74,12 +74,12 @@ func (serviceGenerateHelper) generateNewClientDefinitions(g *protogen.GeneratedF
 }
 
 func (serviceGenerateHelper) generateUnimplementedServerType(gen *protogen.Plugin, file *protogen.File, g *protogen.GeneratedFile, service *protogen.Service) {
-	serverType := service.GoName + "Server"
+	serverType := service.GoName + "MqtServer"
 	mustOrShould := "must"
 	if !*requireUnimplemented {
 		mustOrShould = "should"
 	}
-	// Server Unimplemented struct for forward compatibility.
+	// MqtServer Unimplemented struct for forward compatibility.
 	g.P("// Unimplemented", serverType, " ", mustOrShould, " be embedded to have forward compatible implementations.")
 	g.P("type Unimplemented", serverType, " struct {")
 	g.P("}")
@@ -90,7 +90,7 @@ func (serviceGenerateHelper) generateUnimplementedServerType(gen *protogen.Plugi
 			nilArg = "nil,"
 		}
 		g.P("func (Unimplemented", serverType, ") ", serverSignature(g, method), "{")
-		g.P("return ", nilArg, errorPackage.Ident("new"), "(", `"method `, method.GoName, ` not implemented")`)
+		g.P("return ", nilArg, errorPackage.Ident("New"), "(", `"method `, method.GoName, ` not implemented")`)
 		g.P("}")
 	}
 	if *requireUnimplemented {
@@ -99,16 +99,13 @@ func (serviceGenerateHelper) generateUnimplementedServerType(gen *protogen.Plugi
 	g.P()
 }
 
-func (serviceGenerateHelper) generateServerFunctions(gen *protogen.Plugin, file *protogen.File, g *protogen.GeneratedFile, service *protogen.Service, serverType string, serviceDescVar string) {
-	// Server handler implementations.
-	handlerNames := make([]string, 0, len(service.Methods))
+func (serviceGenerateHelper) generateServerFunctions(gen *protogen.Plugin, file *protogen.File, g *protogen.GeneratedFile, service *protogen.Service, serverType string) {
+	// MqtServer handler implementations.
 	for _, method := range service.Methods {
-		hname := genServerMethod(gen, file, g, method, func(hname string) string {
+		genServerMethod(gen, file, g, method, func(hname string) string {
 			return hname
-		})
-		handlerNames = append(handlerNames, hname)
+		}, serverType)
 	}
-	genServiceDesc(file, g, serviceDescVar, serverType, service, handlerNames)
 }
 
 func (serviceGenerateHelper) formatHandlerFuncName(service *protogen.Service, hname string) string {
@@ -128,7 +125,7 @@ func generateFile(gen *protogen.Plugin, file *protogen.File) *protogen.Generated
 	if len(file.Services) == 0 {
 		return nil
 	}
-	filename := file.GeneratedFilenamePrefix + "_mqtt.pb.go"
+	filename := file.GeneratedFilenamePrefix + "_mqt.pb.go"
 	g := gen.NewGeneratedFile(filename, file.GoImportPath)
 	// Attach all comments associated with the syntax field.
 	genLeadingComments(g, file.Desc.SourceLocations().ByPath(protoreflect.SourcePath{fileDescriptorProtoSyntaxFieldNumber}))
@@ -171,7 +168,7 @@ func generateFileContent(gen *protogen.Plugin, file *protogen.File, g *protogen.
 	g.P("// This is a compile-time assertion to ensure that this generated file")
 	g.P("// is compatible with the mqtt package it is being compiled against.")
 	g.P("// Requires gRPC-Go v1.32.0 or later.")
-	g.P("const _ = ", mqttPackage.Ident("SupportPackageIsVersion7")) // When changing, update version number above.
+	g.P("const _ = ", mqttPackage.Ident("SupportPackageIsVersion1")) // When changing, update version number above.
 	g.P()
 	for _, service := range file.Services {
 		genService(gen, file, g, service)
@@ -182,8 +179,8 @@ func genService(gen *protogen.Plugin, file *protogen.File, g *protogen.Generated
 	// Full methods constants.
 	helper.genFullMethods(g, service)
 
-	// Client interface.
-	clientName := service.GoName + "Client"
+	// MqtClient interface.
+	clientName := service.GoName + "MqtClient"
 
 	g.P("// ", clientName, " is the client API for ", service.GoName, " service.")
 	g.P("//")
@@ -205,20 +202,20 @@ func genService(gen *protogen.Plugin, file *protogen.File, g *protogen.Generated
 	g.P("}")
 	g.P()
 
-	// Client structure.
+	// MqtClient structure.
 	helper.generateClientStruct(g, clientName)
 
 	// NewClient factory.
 	if service.Desc.Options().(*descriptorpb.ServiceOptions).GetDeprecated() {
 		g.P(deprecationComment)
 	}
-	g.P("func New", clientName, " (cc ", mqttPackage.Ident("ClientConnInterface"), ") ", clientName, " {")
+	g.P("func New", clientName, " (cc *", mqttPackage.Ident("Client"), ") ", clientName, " {")
 	helper.generateNewClientDefinitions(g, service, clientName)
 	g.P("}")
 	g.P()
 
 	var methodIndex, streamIndex int
-	// Client method implementations.
+	// MqtClient method implementations.
 	for _, method := range service.Methods {
 		if !method.Desc.IsStreamingServer() && !method.Desc.IsStreamingClient() {
 			// Unary RPC method
@@ -236,8 +233,8 @@ func genService(gen *protogen.Plugin, file *protogen.File, g *protogen.Generated
 		mustOrShould = "should"
 	}
 
-	// Server interface.
-	serverType := service.GoName + "Server"
+	// MqtServer interface.
+	serverType := service.GoName + "MqtServer"
 	g.P("// ", serverType, " is the server API for ", service.GoName, " service.")
 	g.P("// All implementations ", mustOrShould, " embed Unimplemented", serverType)
 	g.P("// for forward compatibility")
@@ -261,10 +258,10 @@ func genService(gen *protogen.Plugin, file *protogen.File, g *protogen.Generated
 	g.P("}")
 	g.P()
 
-	// Server Unimplemented struct for forward compatibility.
+	// MqtServer Unimplemented struct for forward compatibility.
 	helper.generateUnimplementedServerType(gen, file, g, service)
 
-	// Unsafe Server interface to opt-out of forward compatibility.
+	// Unsafe MqtServer interface to opt-out of forward compatibility.
 	g.P("// Unsafe", serverType, " may be embedded to opt out of forward compatibility for this service.")
 	g.P("// Use of this interface is not recommended, as added methods to ", serverType, " will")
 	g.P("// result in compilation errors.")
@@ -272,29 +269,38 @@ func genService(gen *protogen.Plugin, file *protogen.File, g *protogen.Generated
 	g.P("mustEmbedUnimplemented", serverType, "()")
 	g.P("}")
 
-	// Server registration.
+	// MqtServer registration.
 	if service.Desc.Options().(*descriptorpb.ServiceOptions).GetDeprecated() {
 		g.P(deprecationComment)
 	}
-	serviceDescVar := service.GoName + "_ServiceDesc"
-	g.P("func Register", service.GoName, "Server(s ", mqttPackage.Ident("ServiceRegistrar"), ", srv ", serverType, ") {")
-	g.P("s.RegisterService(&", serviceDescVar, `, srv)`)
+	g.P("func Register", service.GoName, "MqtServer(s *", mqttPackage.Ident("Server"), ", srv ", serverType, ") {")
+	g.P("r := s.Route(\"\")")
+	for _, method := range service.Methods {
+		fmSymbol := helper.formatFullMethodSymbol(service, method)
+		hname := fmt.Sprintf("_%s_%s_Mqt_Handler", service.GoName, method.GoName)
+		g.P("r.REQ(", fmSymbol, `, `, hname, `(srv))`)
+	}
+	if strings.Contains(service.GoName, "Upload") {
+		g.P("r.RouteUpload()")
+	} else {
+		g.P("r.Route()")
+	}
 	g.P("}")
 	g.P()
 
-	helper.generateServerFunctions(gen, file, g, service, serverType, serviceDescVar)
+	helper.generateServerFunctions(gen, file, g, service, serverType)
 }
 
 func clientSignature(g *protogen.GeneratedFile, method *protogen.Method) string {
 	s := method.GoName + "(ctx " + g.QualifiedGoIdent(contextPackage.Ident("Context"))
 	if !method.Desc.IsStreamingClient() {
-		s += ", in *" + g.QualifiedGoIdent(method.Input.GoIdent)
+		s += ", topic string, in *" + g.QualifiedGoIdent(method.Input.GoIdent)
 	}
 	s += ", opts ..." + g.QualifiedGoIdent(mqttPackage.Ident("CallOption")) + ") ("
 	if !method.Desc.IsStreamingClient() && !method.Desc.IsStreamingServer() {
 		s += "*" + g.QualifiedGoIdent(method.Output.GoIdent)
 	} else {
-		s += method.Parent.GoName + "_" + method.GoName + "Client"
+		s += method.Parent.GoName + "_" + method.GoName + "MqtClient"
 	}
 	s += ", error)"
 	return s
@@ -307,17 +313,17 @@ func genClientMethod(gen *protogen.Plugin, file *protogen.File, g *protogen.Gene
 	if method.Desc.Options().(*descriptorpb.MethodOptions).GetDeprecated() {
 		g.P(deprecationComment)
 	}
-	g.P("func (c *", unexport(service.GoName), "Client) ", clientSignature(g, method), "{")
+	g.P("func (c *", unexport(service.GoName), "MqtClient) ", clientSignature(g, method), "{")
 	if !method.Desc.IsStreamingServer() && !method.Desc.IsStreamingClient() {
 		g.P("out := new(", method.Output.GoIdent, ")")
-		g.P(`err := c.cc.Invoke(ctx, `, fmSymbol, `, in, out, opts...)`)
+		g.P(`err := c.cc.Invoke(ctx, `, fmSymbol, `, topic, in, out, opts...)`)
 		g.P("if err != nil { return nil, err }")
 		g.P("return out, nil")
 		g.P("}")
 		g.P()
 		return
 	}
-	streamType := unexport(service.GoName) + method.GoName + "Client"
+	streamType := unexport(service.GoName) + method.GoName + "MqtClient"
 	serviceDescVar := service.GoName + "_ServiceDesc"
 	g.P("stream, err := c.cc.NewStream(ctx, &", serviceDescVar, ".Streams[", index, `], `, fmSymbol, `, opts...)`)
 	g.P("if err != nil { return nil, err }")
@@ -335,7 +341,7 @@ func genClientMethod(gen *protogen.Plugin, file *protogen.File, g *protogen.Gene
 	genCloseAndRecv := !method.Desc.IsStreamingServer()
 
 	// Stream auxiliary types and methods.
-	g.P("type ", service.GoName, "_", method.GoName, "Client interface {")
+	g.P("type ", service.GoName, "_", method.GoName, "MqtClient interface {")
 	if genSend {
 		g.P("Send(*", method.Input.GoIdent, ") error")
 	}
@@ -390,7 +396,7 @@ func serverSignature(g *protogen.GeneratedFile, method *protogen.Method) string 
 		reqArgs = append(reqArgs, "*"+g.QualifiedGoIdent(method.Input.GoIdent))
 	}
 	if method.Desc.IsStreamingClient() || method.Desc.IsStreamingServer() {
-		reqArgs = append(reqArgs, method.Parent.GoName+"_"+method.GoName+"Server")
+		reqArgs = append(reqArgs, method.Parent.GoName+"_"+method.GoName+"MqtServer")
 	}
 	return method.GoName + "(" + strings.Join(reqArgs, ", ") + ") " + ret
 }
@@ -436,36 +442,30 @@ func genServiceDesc(file *protogen.File, g *protogen.GeneratedFile, serviceDescV
 	g.P()
 }
 
-func genServerMethod(gen *protogen.Plugin, file *protogen.File, g *protogen.GeneratedFile, method *protogen.Method, hnameFuncNameFormatter func(string) string) string {
+func genServerMethod(gen *protogen.Plugin, file *protogen.File, g *protogen.GeneratedFile, method *protogen.Method, hnameFuncNameFormatter func(string) string, serverType string) string {
 	service := method.Parent
-	hname := fmt.Sprintf("_%s_%s_Handler", service.GoName, method.GoName)
+	hname := fmt.Sprintf("_%s_%s_Mqt_Handler", service.GoName, method.GoName)
 
 	if !method.Desc.IsStreamingClient() && !method.Desc.IsStreamingServer() {
-		g.P("func ", hnameFuncNameFormatter(hname), "(srv interface{}, ctx ", contextPackage.Ident("Context"), ", dec func(interface{}) error, interceptor ", mqttPackage.Ident("UnaryServerInterceptor"), ") (interface{}, error) {")
-		g.P("in := new(", method.Input.GoIdent, ")")
-		g.P("if err := dec(in); err != nil { return nil, err }")
-		g.P("if interceptor == nil { return srv.(", service.GoName, "Server).", method.GoName, "(ctx, in) }")
-		g.P("info := &", mqttPackage.Ident("UnaryServerInfo"), "{")
-		g.P("Server: srv,")
-		fmSymbol := helper.formatFullMethodSymbol(service, method)
-		g.P("FullMethod: ", fmSymbol, ",")
-		g.P("}")
+		g.P("func ", hnameFuncNameFormatter(hname), "(srv ", serverType, ") func(ctx ", contextPackage.Ident("Context"), ", req interface{}) (interface{}, error) {")
+		g.P("return func(ctx ", contextPackage.Ident("Context"), ", req interface{}) (interface{}, error) {")
 		g.P("handler := func(ctx ", contextPackage.Ident("Context"), ", req interface{}) (interface{}, error) {")
-		g.P("return srv.(", service.GoName, "Server).", method.GoName, "(ctx, req.(*", method.Input.GoIdent, "))")
+		g.P("return srv.", method.GoName, "(ctx, req.(*", method.Input.GoIdent, "))")
 		g.P("}")
-		g.P("return interceptor(ctx, in, info, handler)")
+		g.P("return handler(ctx, req)")
+		g.P("}")
 		g.P("}")
 		g.P()
 		return hname
 	}
-	streamType := unexport(service.GoName) + method.GoName + "Server"
+	streamType := unexport(service.GoName) + method.GoName + "MqtServer"
 	g.P("func ", hnameFuncNameFormatter(hname), "(srv interface{}, stream ", mqttPackage.Ident("ServerStream"), ") error {")
 	if !method.Desc.IsStreamingClient() {
 		g.P("m := new(", method.Input.GoIdent, ")")
 		g.P("if err := stream.RecvMsg(m); err != nil { return err }")
-		g.P("return srv.(", service.GoName, "Server).", method.GoName, "(m, &", streamType, "{stream})")
+		g.P("return srv.(", service.GoName, "MqtServer).", method.GoName, "(m, &", streamType, "{stream})")
 	} else {
-		g.P("return srv.(", service.GoName, "Server).", method.GoName, "(&", streamType, "{stream})")
+		g.P("return srv.(", service.GoName, "MqtServer).", method.GoName, "(&", streamType, "{stream})")
 	}
 	g.P("}")
 	g.P()
@@ -475,7 +475,7 @@ func genServerMethod(gen *protogen.Plugin, file *protogen.File, g *protogen.Gene
 	genRecv := method.Desc.IsStreamingClient()
 
 	// Stream auxiliary types and methods.
-	g.P("type ", service.GoName, "_", method.GoName, "Server interface {")
+	g.P("type ", service.GoName, "_", method.GoName, "MqtServer interface {")
 	if genSend {
 		g.P("Send(*", method.Output.GoIdent, ") error")
 	}
