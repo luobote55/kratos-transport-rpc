@@ -39,7 +39,7 @@ func run(_ *cobra.Command, args []string) {
 		err   error
 		proto = strings.TrimSpace(args[0])
 	)
-	if err = look("protoc-gen-go", "protoc-gen-go-grpc", "protoc-gen-go-http", "protoc-gen-go-mqtt", "protoc-gen-go-errors", "protoc-gen-openapi"); err != nil {
+	if err = look("protoc-gen-go", "protoc-gen-go-grpc", "protoc-gen-go-http", "protoc-gen-go-mqt", "protoc-gen-go-errors", "protoc-gen-openapi"); err != nil {
 		// update the kratos plugins
 		cmd := exec.Command("kratos", "upgrade")
 		cmd.Stdout = os.Stdout
@@ -91,11 +91,11 @@ func generate(proto string, args []string) error {
 	inputExt := []string{
 		"--proto_path=" + base.KratosMod(),
 		"--proto_path=" + filepath.Join(base.KratosMod(), "third_party"),
-		"--proto_path=./fourth_party",
+		//		"--proto_path=./fourth_party", // for protoc-gen-go-mqtt
 		"--go_out=paths=source_relative:.",
 		"--go-grpc_out=paths=source_relative:.",
 		"--go-http_out=paths=source_relative:.",
-		"--go-mqtt_out=paths=source_relative:.",
+		"--go-mqt_out=paths=source_relative:.",
 		"--go-errors_out=paths=source_relative:.",
 		"--openapi_out=paths=source_relative:.",
 	}
@@ -112,11 +112,11 @@ func generate(proto string, args []string) error {
 			input = append(input, a)
 		}
 	}
-	fmt.Println("==================================================================")
-	for _, arv := range input {
-		fmt.Println(arv)
-	}
-	fmt.Println("==================================================================")
+	//fmt.Println("==================================================================")
+	//for _, arv := range input {
+	//	fmt.Println(arv)
+	//}
+	//fmt.Println("==================================================================")
 	fd := exec.Command("protoc", input...)
 	fd.Stdout = os.Stdout
 	fd.Stderr = os.Stderr
