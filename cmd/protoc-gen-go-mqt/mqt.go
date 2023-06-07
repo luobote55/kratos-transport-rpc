@@ -30,7 +30,7 @@ import (
 
 const (
 	contextPackage    = protogen.GoImportPath("context")
-	mqttPackage       = protogen.GoImportPath("github.com/luobote55/kratos-transport-rpc/transport/mqtt")
+	mqttPackage       = protogen.GoImportPath("github.com/luobote55/kratos-transport-rpc/server/mqtt")
 	middlewarePackage = protogen.GoImportPath("github.com/go-kratos/kratos/v2/middleware")
 	errorPackage      = protogen.GoImportPath("errors")
 )
@@ -273,7 +273,7 @@ func genService(gen *protogen.Plugin, file *protogen.File, g *protogen.Generated
 	if service.Desc.Options().(*descriptorpb.ServiceOptions).GetDeprecated() {
 		g.P(deprecationComment)
 	}
-	g.P("func Register", service.GoName, "MqtServer(s *", mqttPackage.Ident("Server"), ", srv ", serverType, ") {")
+	g.P("func Register", service.GoName, "MqtServer(s *", mqttPackage.Ident("Server"), ", topic string, srv ", serverType, ") {")
 	g.P("r := s.Route(\"\")")
 	for _, method := range service.Methods {
 		fmSymbol := helper.formatFullMethodSymbol(service, method)
@@ -283,7 +283,7 @@ func genService(gen *protogen.Plugin, file *protogen.File, g *protogen.Generated
 	if strings.Contains(service.GoName, "Upload") {
 		g.P("r.RouteUpload()")
 	} else {
-		g.P("r.Route()")
+		g.P("r.Route(topic)")
 	}
 	g.P("}")
 	g.P()

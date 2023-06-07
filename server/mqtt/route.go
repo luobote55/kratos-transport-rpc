@@ -15,15 +15,15 @@ type Router struct {
 	srv   *Server
 }
 
-func (r *Router) REQ(id string, handler func(context.Context, interface{}) (interface{}, error)) {
-	r.route[id] = bind{
-		Handler: handler,
+func (r *Router) REQ(method string, handler func(context.Context, interface{}) (interface{}, error)) {
+	r.route[method] = bind{
+		//Handler: handler,
 		//		Binder:  binder,
 	}
 }
 
-func (r *Router) Route() {
-	//	r.srv.
+func (r *Router) Route(topic string) {
+	r.srv.RegRoute("", r)
 }
 
 func (r *Router) RouteUpload() {

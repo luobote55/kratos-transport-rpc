@@ -22,7 +22,7 @@ service Greeter {
 // The greeting service definition.
 service GreeterUpload {
   // Sends a greeting
-  rpc Hello (HelloReply) returns (HelloReply) {
+  rpc Hello (HelloRequest) returns (HelloReply) {
   }
 }
 
