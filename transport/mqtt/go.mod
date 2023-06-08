@@ -6,6 +6,8 @@ replace github.com/luobote55/kratos-transport-rpc => ../../
 
 replace github.com/luobote55/kratos-transport-rpc/broker/mqtt => ../../broker/mqtt
 
+replace github.com/luobote55/kratos-transport-rpc/server/mqtt => ../../server/mqtt
+
 //replace github.com/luobote55/kratos-transport-rpc/broker/mqtt => ../../broker/mqtt
 //
 

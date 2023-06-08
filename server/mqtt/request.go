@@ -602,6 +602,8 @@ func readRequest(b *bufio.Reader) (req *Request, err error) {
 
 	req = new(Request)
 
+	// First line: REQ SetSomething MQT/1.1
+
 	// First line: GET /index.html HTTP/1.0
 	var s string
 	if s, err = tp.ReadLine(); err != nil {
@@ -618,23 +620,8 @@ func readRequest(b *bufio.Reader) (req *Request, err error) {
 	if !ok {
 		return nil, badStringError("malformed HTTP request", s)
 	}
-	rawurl := req.RequestURI
 	if req.ProtoMajor, req.ProtoMinor, ok = ParseMQTVersion(req.Proto); !ok {
 		return nil, badStringError("malformed HTTP version", req.Proto)
-	}
-
-	// CONNECT requests are used two different ways, and neither uses a full URL:
-	// The standard use is to tunnel HTTPS through an HTTP proxy.
-	// It looks like "CONNECT www.google.com:443 HTTP/1.1", and the parameter is
-	// just the authority section of a URL. This information should go in req.URL.Host.
-	//
-	// The net/rpc package also uses CONNECT, but there the parameter is a path
-	// that starts with a slash. It can be parsed with the regular URL parser,
-	// and the path will end up in req.URL.Path, where it needs to be in order for
-	// RPC to work.
-	justAuthority := req.Method == "CONNECT" && !strings.HasPrefix(rawurl, "/")
-	if justAuthority {
-		rawurl = "http://" + rawurl
 	}
 
 	// Subsequent lines: Key: value.
@@ -643,17 +630,6 @@ func readRequest(b *bufio.Reader) (req *Request, err error) {
 		return nil, err
 	}
 	req.Header = Header(mimeHeader)
-	if len(req.Header["Host"]) > 1 {
-		return nil, fmt.Errorf("too many Host headers")
-	}
-
-	// RFC 7230, section 5.3: Must treat
-	//	GET /index.html HTTP/1.1
-	//	Host: www.google.com
-	// and
-	//	GET http://www.google.com/index.html HTTP/1.1
-	//	Host: doesntmatter
-	// the same. In the second case, any Host line is ignored.
 
 	req.Close = shouldClose(req.ProtoMajor, req.ProtoMinor, req.Header, false)
 

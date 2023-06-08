@@ -10,6 +10,8 @@ import (
 	"github.com/luobote55/kratos-transport-rpc/transport/mqtt"
 	"github.com/pkg/errors"
 	"golang.org/x/net/http/httpguts"
+	"golang.org/x/net/http2"
+	"golang.org/x/net/http2/h2c"
 	"io"
 	"net"
 	"net/http"
@@ -107,28 +109,6 @@ func (cr *connReader) backgroundRead() {
 	cr.lock()
 	if n == 1 {
 		cr.hasByte = true
-		// We were past the end of the previous request's body already
-		// (since we wouldn't be in a background read otherwise), so
-		// this is a pipelined HTTP request. Prior to Go 1.11 we used to
-		// send on the CloseNotify channel and cancel the context here,
-		// but the behavior was documented as only "may", and we only
-		// did that because that's how CloseNotify accidentally behaved
-		// in very early Go releases prior to context support. Once we
-		// added context support, people used a Handler's
-		// Request.Context() and passed it along. Having that context
-		// cancel on pipelined HTTP requests caused problems.
-		// Fortunately, almost nothing uses HTTP/1.x pipelining.
-		// Unfortunately, apt-get does, or sometimes does.
-		// New Go 1.11 behavior: don't fire CloseNotify or cancel
-		// contexts on pipelined requests. Shouldn't affect people, but
-		// fixes cases like Issue 23921. This does mean that a client
-		// closing their TCP connection after sending a pipelined
-		// request won't cancel the context, but we'll catch that on any
-		// write failure (in checkConnErrorWriter.Write).
-		// If the server never writes, yes, there are still contrived
-		// server & client behaviors where this fails to ever cancel the
-		// context, but that's kinda why HTTP/1.x pipelining died
-		// anyway.
 	}
 	if ne, ok := err.(net.Error); ok && cr.aborted && ne.Timeout() {
 		// Ignore this error. It's the expected error from
@@ -1048,9 +1028,12 @@ func NewServer(opts ...ServerOption) *Server {
 // /sys/[ tenantid ]/[ sn ]    + /service/[ deviceType ]
 func (s *Server) RegRoute(topic string, r *Router) {
 	s.server.RegisterSubscriber(context.Background(), s.topicPre+topic, func(ctx context.Context, msg broker.Event) error {
-		//id := msg.Message().Headers[broker.Identifier]
-		//r.route[id].Handler(ctx, msg.Data())
+
+		request, err := readRequest(bufio.NewReader(strings.NewReader(string(msg.Raw()))))
+		id := msg.Message().Headers[broker.Identifier]
+		r.route[id].Handler(ctx, msg.Data())
 		return nil
+
 	}, func() broker.Any { return nil })
 }
 
@@ -1085,6 +1068,15 @@ func (s *Server) Stop(ctx context.Context) error {
 
 func (s *Server) Route(prefix string) *Router {
 	return newRouter(prefix, s)
+}
+
+func (s *Server) Handler() broker.Handler {
+	if !engine.UseH2C {
+		return engine
+	}
+
+	h2s := &http2.Server{}
+	return h2c.NewHandler(engine, h2s)
 }
 
 const (

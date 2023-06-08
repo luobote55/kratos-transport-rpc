@@ -32,7 +32,7 @@ type Response struct {
 
 func ParseMQTVersion(vers string) (major, minor int, ok bool) {
 	switch vers {
-	case "MQTT/1.1":
+	case "MQT/1.1":
 		return 1, 1, true
 	}
 	return 0, 0, false
