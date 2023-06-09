@@ -5,13 +5,12 @@ import (
 	"context"
 	"crypto/tls"
 	"fmt"
+	"github.com/go-kratos/kratos/v2/encoding"
 	"github.com/go-kratos/kratos/v2/middleware"
 	"github.com/luobote55/kratos-transport-rpc/broker"
 	"github.com/luobote55/kratos-transport-rpc/transport/mqtt"
 	"github.com/pkg/errors"
 	"golang.org/x/net/http/httpguts"
-	"golang.org/x/net/http2"
-	"golang.org/x/net/http2/h2c"
 	"io"
 	"net"
 	"net/http"
@@ -35,9 +34,7 @@ var (
 	ErrAbortHandler    = errors.New("net/http: abort Handler")
 )
 
-type Handler interface {
-	ServeHTTP(ResponseWriter, *Request)
-}
+type Handler func(context.Context, interface{}) (interface{}, error)
 
 type ResponseWriter interface {
 	Header() Header
@@ -866,16 +863,12 @@ func (c *conn) getState() (state ConnState, unixSec int64) {
 func (c *conn) serve(ctx context.Context) {
 	c.remoteAddr = c.rwc.RemoteAddr().String()
 	ctx = context.WithValue(ctx, LocalAddrContextKey, c.rwc.LocalAddr())
-	var inFlightResponse *response
 	defer func() {
 		if err := recover(); err != nil && err != ErrAbortHandler {
 			const size = 64 << 10
 			buf := make([]byte, size)
 			buf = buf[:runtime.Stack(buf, false)]
 			c.server.log.Error("http: panic serving %v: %v\n%s", c.remoteAddr, err, buf)
-		}
-		if inFlightResponse != nil {
-			inFlightResponse.cancelCtx()
 		}
 	}()
 
@@ -911,24 +904,6 @@ func (c *conn) serve(ctx context.Context) {
 			w.conn.r.startBackgroundRead()
 		}
 
-		inFlightResponse = w
-		serverHandler{c.server}.ServeHTTP(w, w.req)
-		inFlightResponse = nil
-		w.cancelCtx()
-		w.finishRequest()
-		c.rwc.SetWriteDeadline(time.Time{})
-		c.setState(c.rwc, StateIdle, runHooks)
-		c.curReq.Store(nil)
-
-		c.rwc.SetReadDeadline(time.Time{})
-
-		// Wait for the connection to become readable again before trying to
-		// read the next request. This prevents a ReadHeaderTimeout or
-		// ReadTimeout from starting until the first bytes of the next request
-		// have been received.
-		if _, err := c.bufr.Peek(4); err != nil {
-			return
-		}
 	}
 }
 
@@ -985,7 +960,6 @@ var srv Server
 type Server struct {
 	baseCtx context.Context
 	err     error
-	Handler Handler // handler to invoke, http.DefaultServeMux if nil
 
 	ReadTimeout  time.Duration
 	WriteTimeout time.Duration
@@ -1006,11 +980,10 @@ func NewServer(opts ...ServerOption) *Server {
 	srv = Server{
 		baseCtx:        context.Background(),
 		err:            nil,
-		Handler:        nil,
 		ReadTimeout:    2 * time.Second,
 		WriteTimeout:   2 * time.Second,
 		IdleTimeout:    2 * time.Second,
-		server:         nil,
+		server:         mqtt.NewServer(),
 		MaxHeaderBytes: 0,
 		topicPre:       "",
 		md:             nil,
@@ -1028,12 +1001,60 @@ func NewServer(opts ...ServerOption) *Server {
 // /sys/[ tenantid ]/[ sn ]    + /service/[ deviceType ]
 func (s *Server) RegRoute(topic string, r *Router) {
 	s.server.RegisterSubscriber(context.Background(), s.topicPre+topic, func(ctx context.Context, msg broker.Event) error {
-
 		request, err := readRequest(bufio.NewReader(strings.NewReader(string(msg.Raw()))))
-		id := msg.Message().Headers[broker.Identifier]
-		r.route[id].Handler(ctx, msg.Data())
-		return nil
+		if err != nil {
+			return err
+		}
+		id, ok := request.Header[broker.Identifier]
+		if !ok {
+			return errors.New("没有broker.Identifier")
+		}
+		bbind, ok := r.route[id[0]]
+		if !ok {
+			return errors.New("没有注册这个接口," + id[0])
+		}
+		codec, ok := request.Header[broker.TransferEncoding]
+		if !ok {
+			codec = []string{"json"}
+		}
+		b := make([]byte, 0)
+		n, err := request.Body.Read(b)
+		if err != nil {
+			return err
+		}
+		if n == 0 {
+			return errors.New("body没有body" + id[0])
+		}
+		req := bbind.Binder()
+		encoding.GetCodec(codec[0]).Unmarshal(b, bbind.Binder())
 
+		h := func(c context.Context, in interface{}) (interface{}, error) {
+			return bbind.Handler(c, in)
+		}
+		if len(s.md) > 0 {
+			h = middleware.Chain(s.md...)(h)
+		}
+		resp, err := h(ctx, req)
+		if err != nil {
+			return err
+		}
+		ctx, cancelCtx := context.WithCancel(ctx)
+		res := &response{
+			cancelCtx:     cancelCtx,
+			req:           request,
+			reqBody:       request.Body,
+			handlerHeader: make(Header),
+			contentLength: -1,
+			closeNotifyCh: make(chan bool, 1),
+		}
+		res.cw.res = res
+		res.w = newBufioWriterSize(&res.cw, bufferBeforeChunkingSize)
+		respBody, err := encoding.GetCodec(codec[0]).Marshal(resp)
+		if err != nil {
+			return err
+		}
+		res.Write(respBody)
+		return nil
 	}, func() broker.Any { return nil })
 }
 
@@ -1070,15 +1091,6 @@ func (s *Server) Route(prefix string) *Router {
 	return newRouter(prefix, s)
 }
 
-func (s *Server) Handler() broker.Handler {
-	if !engine.UseH2C {
-		return engine
-	}
-
-	h2s := &http2.Server{}
-	return h2c.NewHandler(engine, h2s)
-}
-
 const (
 	runHooks  = true
 	skipHooks = false
@@ -1104,18 +1116,6 @@ var stateName = map[ConnState]string{
 
 func (c ConnState) String() string {
 	return stateName[c]
-}
-
-// serverHandler delegates to either the server's Handler or
-// DefaultServeMux and also handles "OPTIONS *" requests.
-type serverHandler struct {
-	srv *Server
-}
-
-func (sh serverHandler) ServeHTTP(rw ResponseWriter, req *Request) {
-	handler := sh.srv.Handler
-
-	handler.ServeHTTP(rw, req)
 }
 
 type checkConnErrorWriter struct {

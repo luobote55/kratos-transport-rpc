@@ -17,7 +17,7 @@ type Router struct {
 
 func (r *Router) REQ(method string, handler func(context.Context, interface{}) (interface{}, error)) {
 	r.route[method] = bind{
-		//Handler: handler,
+		Handler: handler,
 		//		Binder:  binder,
 	}
 }

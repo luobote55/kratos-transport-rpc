@@ -201,6 +201,7 @@ const (
 	AcceptEncoding   = "Accept-Encoding"
 	Authorization    = "Authorization"
 	ContentLength    = "Content-Length"
+	SessionId        = "SessionId"
 )
 
 type PublishOptions struct {
