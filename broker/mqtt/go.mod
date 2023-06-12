@@ -2,18 +2,10 @@ module github.com/luobote55/kratos-transport-rpc/broker/mqtt
 
 go 1.20
 
-replace github.com/luobote55/kratos-transport-rpc => ../../
-
-//replace github.com/luobote55/kratos-transport-rpc/api/manual => ../../api/manual
-
-replace github.com/luobote55/kratos-transport-rpc/broker/mqtt => ../../broker/mqtt
-
-replace github.com/luobote55/kratos-transport-rpc/server/mqtt => ../../server/mqtt
-
 require (
 	github.com/eclipse/paho.mqtt.golang v1.4.2
 	github.com/go-kratos/kratos/v2 v2.6.2
-	github.com/luobote55/kratos-transport-rpc v0.0.0-00010101000000-000000000000
+	github.com/luobote55/kratos-transport-rpc v0.1.0
 	github.com/stretchr/testify v1.8.4
 )
 
