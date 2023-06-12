@@ -3,7 +3,6 @@ module github.com/tx7do/kratos-transport/_example/server/mqtt
 go 1.20
 replace github.com/luobote55/kratos-transport-rpc => ../../
 
-
 replace github.com/luobote55/kratos-transport-rpc/transport/mqtt => ../../transport/mqtt
 
 replace github.com/luobote55/kratos-transport-rpc/broker/mqtt => ../../broker/mqtt
@@ -12,8 +11,6 @@ replace github.com/luobote55/kratos-transport-rpc/server/mqtt => ../../server/mq
 
 require (
 	github.com/go-kratos/kratos/v2 v2.6.2
-	github.com/luobote55/kratos-transport-rpc v0.0.7
-	github.com/luobote55/kratos-transport-rpc/transport/mqtt v0.0.0-20230603014742-a3c4b51c663a
 	github.com/tx7do/kratos-transport v1.0.5
 )
 

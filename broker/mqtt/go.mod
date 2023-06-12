@@ -4,7 +4,7 @@ go 1.20
 
 replace github.com/luobote55/kratos-transport-rpc => ../../
 
-replace github.com/luobote55/kratos-transport-rpc/api/manual => ../../api/manual
+//replace github.com/luobote55/kratos-transport-rpc/api/manual => ../../api/manual
 
 replace github.com/luobote55/kratos-transport-rpc/broker/mqtt => ../../broker/mqtt
 
@@ -22,7 +22,7 @@ require (
 	github.com/go-logr/logr v1.2.4 // indirect
 	github.com/go-logr/stdr v1.2.2 // indirect
 	github.com/google/uuid v1.3.0 // indirect
-	github.com/gorilla/websocket v1.5.0 // indirect
+	github.com/gorilla/websocket v1.4.2 // indirect
 	github.com/openzipkin/zipkin-go v0.4.1 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/tx7do/kratos-transport v1.0.5 // indirect
