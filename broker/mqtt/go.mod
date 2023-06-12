@@ -5,7 +5,7 @@ go 1.20
 require (
 	github.com/eclipse/paho.mqtt.golang v1.4.2
 	github.com/go-kratos/kratos/v2 v2.6.2
-	github.com/luobote55/kratos-transport-rpc v0.1.0
+	github.com/luobote55/kratos-transport-rpc v0.1.1
 	github.com/stretchr/testify v1.8.4
 )
 

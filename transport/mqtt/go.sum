@@ -21,8 +21,14 @@ github.com/google/uuid v1.3.0/go.mod h1:TIyPZe4MgqvfeYDBFedMoGGpEw/LqOeaOT+nhxU+
 github.com/gorilla/websocket v1.4.2/go.mod h1:YR8l580nyteQvAITg2hZ9XVh4b55+EU/adAjf1fMHhE=
 github.com/gorilla/websocket v1.5.0 h1:PPwGk2jz7EePpoHN/+ClbZu8SPxiqlu12wZP/3sWmnc=
 github.com/gorilla/websocket v1.5.0/go.mod h1:YR8l580nyteQvAITg2hZ9XVh4b55+EU/adAjf1fMHhE=
+github.com/luobote55/kratos-transport-rpc v0.1.1 h1:+NXORuudEic7qgTzHfr72XlVb1RfPBbq+p87+/yiBb4=
+github.com/luobote55/kratos-transport-rpc v0.1.1/go.mod h1:kZYdfdCXpZQBRAZue4LnsjTJb7RlbWW3RC6VFdBTwAI=
+github.com/luobote55/kratos-transport-rpc/broker/mqtt v0.0.0-20230603014742-a3c4b51c663a h1:1k3dLKU5OI3VSaFcvSttwReyOcGo36r77w8ByZ5QhCk=
+github.com/luobote55/kratos-transport-rpc/broker/mqtt v0.0.0-20230603014742-a3c4b51c663a/go.mod h1:s3C9qTd1PZ4M72S8nfxkpKwBArPAclxStV+ZDOEKot0=
 github.com/openzipkin/zipkin-go v0.4.1 h1:kNd/ST2yLLWhaWrkgchya40TJabe8Hioj9udfPcEO5A=
 github.com/openzipkin/zipkin-go v0.4.1/go.mod h1:qY0VqDSN1pOBN94dBc6w2GJlWLiovAyg7Qt6/I9HecM=
+github.com/pkg/errors v0.9.1 h1:FEBLx1zS214owpjy7qsBeixbURkuhQAwrK5UwLGTwt4=
+github.com/pkg/errors v0.9.1/go.mod h1:bwawxfHBFNV+L2hUp1rHADufV3IMtnDRdf1r5NINEl0=
 github.com/pmezard/go-difflib v1.0.0 h1:4DBwDE0NGyQoBHbLQYPwSUPoCMWR5BEzIk/f1lZbAQM=
 github.com/pmezard/go-difflib v1.0.0/go.mod h1:iKH77koFhYxTK1pcRnkKkqfTogsbg7gZNVY4sRDYZ/4=
 github.com/stretchr/objx v0.5.0 h1:1zr/of2m5FGMsad5YfcqgdqdWrIhu+EBEJRhR1U7z/c=
