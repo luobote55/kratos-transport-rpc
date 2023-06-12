@@ -2,20 +2,12 @@ module github.com/luobote55/kratos-transport-rpc/server/mqtt
 
 go 1.20
 
-replace github.com/luobote55/kratos-transport-rpc => ../../
-
-replace github.com/luobote55/kratos-transport-rpc/broker/mqtt => ../../broker/mqtt
-
-replace github.com/luobote55/kratos-transport-rpc/transport/mqtt => ../../transport/mqtt
-
-//replace github.com/luobote55/kratos-transport-rpc/server/mqtt => ../../server/mqtt
-
 require (
 	github.com/Terry-Mao/goim v0.0.0-20220603075457-1800484a4533
 	github.com/go-kratos/kratos/v2 v2.6.2
 	github.com/google/uuid v1.3.0
 	github.com/luobote55/kratos-transport-rpc v0.1.1
-	github.com/luobote55/kratos-transport-rpc/transport/mqtt v0.0.0-00010101000000-000000000000
+	github.com/luobote55/kratos-transport-rpc/transport/mqtt v0.0.0-20230612152922-083cff90bb53
 	github.com/pkg/errors v0.9.1
 )
 
@@ -25,7 +17,7 @@ require (
 	github.com/go-logr/stdr v1.2.2 // indirect
 	github.com/go-playground/form/v4 v4.2.0 // indirect
 	github.com/gorilla/websocket v1.5.0 // indirect
-	github.com/luobote55/kratos-transport-rpc/broker/mqtt v0.0.0-20230603014742-a3c4b51c663a // indirect
+	github.com/luobote55/kratos-transport-rpc/broker/mqtt v0.0.0-20230612152442-29d737681a30 // indirect
 	github.com/openzipkin/zipkin-go v0.4.1 // indirect
 	github.com/tx7do/kratos-transport v1.0.5 // indirect
 	go.opentelemetry.io/otel v1.16.0 // indirect
