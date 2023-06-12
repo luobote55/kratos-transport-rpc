@@ -63,12 +63,6 @@ func WithClientId(clientId string) ServerOption {
 	}
 }
 
-func WithFromTo(ft bool) ServerOption {
-	return func(s *Server) {
-		s.brokerOpts = append(s.brokerOpts, mqtt.WithFromTo(ft))
-	}
-}
-
 func WithCodec(c string) ServerOption {
 	return func(s *Server) {
 		s.brokerOpts = append(s.brokerOpts, broker.WithCodec(c))

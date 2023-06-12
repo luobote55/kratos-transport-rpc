@@ -7,7 +7,7 @@ info:
     description: The greeting service definition.
     version: 0.0.1
 paths:
-    /helloworld/{name}:
+    /helloworld/hello:
         get:
             tags:
                 - Greeter
@@ -15,8 +15,7 @@ paths:
             operationId: Greeter_SayHello
             parameters:
                 - name: name
-                  in: path
-                  required: true
+                  in: query
                   schema:
                     type: string
                 - name: timeFrom

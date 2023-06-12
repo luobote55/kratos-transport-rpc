@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"github.com/go-kratos/kratos/v2"
 	v1 "github.com/luobote55/kratos-transport-rpc/api/v1"
 	"time"
 

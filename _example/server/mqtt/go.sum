@@ -22,10 +22,12 @@ github.com/google/uuid v1.3.0/go.mod h1:TIyPZe4MgqvfeYDBFedMoGGpEw/LqOeaOT+nhxU+
 github.com/gorilla/mux v1.8.0 h1:i40aqfkR1h2SlN9hojwV5ZA91wcXFOvkdNIeFDP5koI=
 github.com/gorilla/websocket v1.4.2 h1:+/TMaTYc4QFitKJxsQ7Yye35DkWvkdLcvGKqM+x0Ufc=
 github.com/gorilla/websocket v1.4.2/go.mod h1:YR8l580nyteQvAITg2hZ9XVh4b55+EU/adAjf1fMHhE=
-github.com/luobote55/kratos-transport-rpc/broker/mqtt v0.0.0-20230526015746-83a9f4773d59 h1:EVotFlRg7dYopnAUhPEhreeThMLhAwY69WlxqRdVrAY=
-github.com/luobote55/kratos-transport-rpc/broker/mqtt v0.0.0-20230526015746-83a9f4773d59/go.mod h1:A/4s88d/tuisnR5oTPyPfSpcyWT0x0M6D4ddi2hDa/Y=
-github.com/luobote55/kratos-transport-rpc/transport/mqtt v0.0.0-20230526021310-b165c3a5e2c8 h1:JrtI/1wxm0j63eqUOXNEjCFE/IskRlINQl0+PP+wRKo=
-github.com/luobote55/kratos-transport-rpc/transport/mqtt v0.0.0-20230526021310-b165c3a5e2c8/go.mod h1:QlYqytbyIqRT5+r0nGBt6YfJ959lQ/N9A56IUUTw+ew=
+github.com/luobote55/kratos-transport-rpc v0.0.7 h1:gs+x80egQm8smpc57OoboW2Es3HPM3NODRp7BIlBr9o=
+github.com/luobote55/kratos-transport-rpc v0.0.7/go.mod h1:UYwAsyoOhFll6wRD8eztQwfaGNL6r2SxpVHUr97XwYQ=
+github.com/luobote55/kratos-transport-rpc/broker/mqtt v0.0.0-20230603012757-306c4bdf4e01 h1:wlkQKZA21+G2EhQVYTijAYzpzEYjAAq4KwduZZn4vkw=
+github.com/luobote55/kratos-transport-rpc/broker/mqtt v0.0.0-20230603012757-306c4bdf4e01/go.mod h1:s3C9qTd1PZ4M72S8nfxkpKwBArPAclxStV+ZDOEKot0=
+github.com/luobote55/kratos-transport-rpc/transport/mqtt v0.0.0-20230603014742-a3c4b51c663a h1:/fn5J08d8JBCsSFBAEXmYX1otq7ODcfqqSw+7iqrR10=
+github.com/luobote55/kratos-transport-rpc/transport/mqtt v0.0.0-20230603014742-a3c4b51c663a/go.mod h1:5Kri/yNI2ukMPuDA3i2dS6po6SAI9ElOMol0jTc09+E=
 github.com/openzipkin/zipkin-go v0.4.1 h1:kNd/ST2yLLWhaWrkgchya40TJabe8Hioj9udfPcEO5A=
 github.com/openzipkin/zipkin-go v0.4.1/go.mod h1:qY0VqDSN1pOBN94dBc6w2GJlWLiovAyg7Qt6/I9HecM=
 github.com/pkg/errors v0.9.1 h1:FEBLx1zS214owpjy7qsBeixbURkuhQAwrK5UwLGTwt4=

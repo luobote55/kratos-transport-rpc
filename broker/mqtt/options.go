@@ -2,12 +2,6 @@ package mqtt
 
 import (
 	"github.com/luobote55/kratos-transport-rpc/broker"
-	"github.com/pkg/errors"
-)
-
-var (
-	ErrMessageFrom = errors.New("ErrMessageFrom")
-	ErrMessageTo   = errors.New("ErrMessageTo")
 )
 
 ///
@@ -17,7 +11,6 @@ var (
 type cleanSessionKey struct{}
 type authKey struct{}
 type clientIdKey struct{}
-type fromToKey struct{}
 type autoReconnectKey struct{}
 type resumeSubsKey struct{}
 type orderMattersKey struct{}
@@ -43,11 +36,6 @@ func WithAuth(username string, password string) broker.Option {
 // WithClientId set client id option
 func WithClientId(clientId string) broker.Option {
 	return broker.OptionContextWithValue(clientIdKey{}, clientId)
-}
-
-// WithClientId set client id option
-func WithFromTo(ft bool) broker.Option {
-	return broker.OptionContextWithValue(fromToKey{}, ft)
 }
 
 // WithAutoReconnect enable aut reconnect option
@@ -79,6 +67,7 @@ func WithSubscribeQos(qos byte) broker.SubscribeOption {
 // /
 // / PublishOption
 // /
+
 type qosPublishKey struct{}
 type retainedPublishKey struct{}
 

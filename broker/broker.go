@@ -6,9 +6,27 @@ import (
 
 type Any interface{}
 
-type Handler func(context.Context, Event) (Any, error)
+type Handler func(context.Context, Event) error
 
-type Binder func(string) Any
+type Binder func() Any
+
+type Headers map[string]string
+
+type Message struct {
+	Headers Headers
+	Body    Any
+}
+
+func (m Message) GetHeaders() Headers {
+	return m.Headers
+}
+
+func (m Message) GetHeader(key string) string {
+	if m.Headers == nil {
+		return ""
+	}
+	return m.Headers[key]
+}
 
 type RespEvent interface {
 	GetBody() Any
@@ -20,6 +38,7 @@ type Event interface {
 	Ack() error
 	Error() error
 	Data() Any
+	Raw() []byte
 }
 
 type Subscriber interface {
@@ -40,11 +59,7 @@ type Broker interface {
 	Disconnect() error
 
 	Publish(topic string, msg Any, opts ...PublishOption) error
-	PublishReq(topic string, msg Any, opts ...PublishOption) error
-	PublishUpload(topic string, msg Any, opts ...PublishOption) error
+	PublishRaw(topic string, msg []byte, opts ...PublishOption) error
 
 	Subscribe(topic string, handler Handler, binder Binder, opts ...SubscribeOption) (Subscriber, error)
-	SubscribeReq(topic string, handler Handler, binder Binder, opts ...SubscribeOption) (Subscriber, error)
-	SubscribeResp(topic string, handler Handler, binder Binder, opts ...SubscribeOption) (Subscriber, error)
-	SubscribeUpload(topic string, handler Handler, binder Binder, opts ...SubscribeOption) (Subscriber, error)
 }

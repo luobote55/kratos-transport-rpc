@@ -2,8 +2,6 @@ package mqtt
 
 import (
 	"github.com/go-kratos/kratos/v2/transport"
-	"github.com/luobote55/kratos-transport-rpc/broker"
-	transport2 "github.com/luobote55/kratos-transport-rpc/transport"
 )
 
 const (
@@ -49,42 +47,29 @@ func (tr *Transport) PathTemplate() string {
 	return tr.pathTemplate
 }
 
-// SetOperation sets the transport operation.
-func SetOperation(ctx transport2.Context, op string) {
-	if tr, ok := transport.FromServerContext(ctx); ok {
-		if tr, ok := tr.(*Transport); ok {
-			tr.operation = op
-		}
-	}
-}
+type headerCarrier struct{}
 
-type headerCarrier broker.Headers
-
-func (hc headerCarrier) Add(key string, value string) {
+func (mc headerCarrier) Add(key string, value string) {
 	//TODO implement me
 	panic("implement me")
 }
 
-func (hc headerCarrier) Values(key string) []string {
+func (mc headerCarrier) Values(key string) []string {
 	//TODO implement me
 	panic("implement me")
 }
 
 // Get returns the value associated with the passed key.
-func (hc headerCarrier) Get(key string) string {
-	return broker.Headers(hc).Headers[key]
+func (mc headerCarrier) Get(_ string) string {
+	return ""
 }
 
 // Set stores the key-value pair.
-func (hc headerCarrier) Set(key string, value string) {
-	broker.Headers(hc).Headers[key] = value
+func (mc headerCarrier) Set(_ string, _ string) {
+
 }
 
 // Keys lists the keys stored in this carrier.
-func (hc headerCarrier) Keys() []string {
-	keys := make([]string, 0, len(hc.Headers))
-	for k := range broker.Headers(hc).Headers {
-		keys = append(keys, k)
-	}
-	return keys
+func (mc headerCarrier) Keys() []string {
+	return nil
 }

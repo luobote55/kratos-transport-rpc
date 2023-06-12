@@ -2,10 +2,8 @@ package mqtt
 
 import (
 	"context"
-	"github.com/google/uuid"
 	"github.com/luobote55/kratos-transport-rpc/broker"
 	"github.com/luobote55/kratos-transport-rpc/broker/mqtt"
-	"github.com/pkg/errors"
 	"net/url"
 	"strings"
 	"sync"
@@ -32,12 +30,8 @@ type Server struct {
 	broker.Broker
 	brokerOpts []broker.Option
 
-	subscribers          sync.Map
-	subscriberOpts       sync.Map // SubscribeOptionMap
-	subscriberReqOpts    sync.Map // SubscribeOptionMap
-	subscriberRespOpts   sync.Map // SubscribeOptionMap
-	subscriberUploadOpts sync.Map // SubscribeOptionMap
-	responseMap          sync.Map
+	subscribers    sync.Map
+	subscriberOpts sync.Map // SubscribeOptionMap
 
 	//	sync.RWMutex
 	started bool
@@ -48,15 +42,12 @@ type Server struct {
 
 func NewServer(opts ...ServerOption) *Server {
 	srv := &Server{
-		Broker:               nil,
-		brokerOpts:           []broker.Option{},
-		subscribers:          sync.Map{},
-		subscriberReqOpts:    sync.Map{},
-		subscriberRespOpts:   sync.Map{},
-		subscriberUploadOpts: sync.Map{},
-		started:              false,
-		baseCtx:              context.Background(),
-		err:                  nil,
+		Broker:      nil,
+		brokerOpts:  []broker.Option{},
+		subscribers: sync.Map{},
+		started:     false,
+		baseCtx:     context.Background(),
+		err:         nil,
 	}
 
 	srv.init(opts...)
@@ -67,6 +58,7 @@ func NewServer(opts ...ServerOption) *Server {
 		if err != nil {
 			return
 		}
+		srv.started = true
 	}))
 	srv.Broker = mqtt.NewBroker(srv.brokerOpts...)
 
@@ -138,147 +130,21 @@ func (s *Server) Stop(_ context.Context) error {
 	return s.Disconnect()
 }
 
-func (s *Server) PublishUpload(ctx context.Context, topic string, msg broker.Any, binder broker.Binder) (broker.Any, error) {
-	err := s.Broker.PublishUpload(topic, msg, broker.WithPublishContext(ctx))
-	return nil, err
-}
-
-func (s *Server) PublishReq(ctx context.Context, topic string, msg broker.Any, binder broker.Binder) (broker.Any, error) {
-	_, ok := s.subscriberOpts.Load(topic)
-	if !ok {
-		handler := func(ctx1 context.Context, event broker.Event) (broker.Any, error) {
-			resp := event.Message()
-			value, ok := resp.Headers.Headers[broker.MessageId]
-			if !ok {
-				return nil, nil
-			}
-			ch, ok := s.responseMap.LoadAndDelete(value)
-			if !ok {
-				return nil, nil
-			}
-			data := event.Data()
-			value, ok = resp.Headers.Headers[broker.Identifier]
-			if !ok {
-				return nil, nil
-			}
-			if value == broker.Failed {
-				ch.(chan broker.Any) <- data.(*broker.CommonReply).Msg
-				return nil, nil
-			}
-			ch.(chan broker.Any) <- data
-			return nil, nil
-		}
-		s.RegisterSubscriberResp(ctx, topic, handler, func(id string) broker.Any {
-			if id == broker.Failed {
-				return &broker.CommonReply{}
-			}
-			return binder(id)
-		})
-	}
-	msgId, _ := uuid.NewRandom()
-	ch := make(chan broker.Any, 1)
-	s.responseMap.Store(msgId.String(), ch)
-	err := s.Broker.PublishReq(topic,
-		msg,
-		broker.WithPublishContext(ctx),
-		broker.PublishContextWithValue(broker.MessageId, msgId.String()))
-	if err != nil {
-		return nil, err
-	}
-	select {
-	case <-ctx.Done():
-		s.responseMap.Delete(msgId.String())
-		return nil, ctx.Err()
-	case resp := <-ch:
-		if errStr, ok := resp.(string); ok {
-			return nil, errors.New(errStr)
-		}
-		return resp, nil
-	}
-	return nil, nil
-}
-
 func (s *Server) RegisterSubscriber(ctx context.Context, topic string, handler broker.Handler, binder broker.Binder, opts ...broker.SubscribeOption) error {
 	opts = append(opts, broker.WithSubscribeContext(ctx))
+	s.subscriberOpts.Store(topic, &SubscribeOption{handler: handler, binder: binder, opts: opts})
 
 	if s.started {
 		return s.doRegisterSubscriber(topic, handler, binder, opts...)
-	} else {
-		s.subscriberOpts.Store(topic, &SubscribeOption{handler: handler, binder: binder, opts: opts})
-	}
-	return nil
-}
-
-func (s *Server) RegisterSubscriberReq(ctx context.Context, topic string, handler broker.Handler, binder broker.Binder, opts ...broker.SubscribeOption) error {
-	opts = append(opts, broker.WithSubscribeContext(ctx))
-	s.subscriberReqOpts.Store(topic, &SubscribeOption{handler: handler, binder: binder, opts: opts})
-
-	if s.started {
-		return s.doRegisterSubscriberReq(topic, handler, binder, opts...)
-	} else {
-	}
-	return nil
-}
-
-func (s *Server) RegisterSubscriberResp(ctx context.Context, topic string, handler broker.Handler, binder broker.Binder, opts ...broker.SubscribeOption) error {
-	opts = append(opts, broker.WithSubscribeContext(ctx))
-	_, ok := s.subscriberRespOpts.LoadOrStore(topic, &SubscribeOption{handler: handler, binder: binder, opts: opts})
-	if ok {
-		return nil
-	}
-
-	if s.started {
-		return s.doRegisterSubscriberResp(topic, handler, binder, opts...)
-	} else {
-	}
-	return nil
-}
-
-func (s *Server) RegisterSubscriberUpload(ctx context.Context, topic string, handler broker.Handler, binder broker.Binder, opts ...broker.SubscribeOption) error {
-	opts = append(opts, broker.WithSubscribeContext(ctx))
-	s.subscriberUploadOpts.Store(topic, &SubscribeOption{handler: handler, binder: binder, opts: opts})
-
-	if s.started {
-		return s.doRegisterSubscriberUpload(topic, handler, binder, opts...)
-	} else {
 	}
 	return nil
 }
 
 func (s *Server) doRegisterSubscriber(topic string, handler broker.Handler, binder broker.Binder, opts ...broker.SubscribeOption) error {
-	sub, err := s.Subscribe(topic, handler, binder, opts...)
+	_, err := s.Subscribe(topic, handler, binder, opts...)
 	if err != nil {
 		return err
 	}
-	s.subscribers.Store(topic, sub)
-	return nil
-}
-
-func (s *Server) doRegisterSubscriberReq(topic string, handler broker.Handler, binder broker.Binder, opts ...broker.SubscribeOption) error {
-	sub, err := s.SubscribeReq(topic, handler, binder, opts...)
-	if err != nil {
-		return err
-	}
-	s.subscribers.Store(topic, sub)
-	return nil
-}
-
-func (s *Server) doRegisterSubscriberResp(topic string, handler broker.Handler, binder broker.Binder, opts ...broker.SubscribeOption) error {
-	sub, err := s.SubscribeResp(topic, handler, binder, opts...)
-	if err != nil {
-		return err
-	}
-	s.subscribers.Store(topic, sub)
-	return nil
-}
-
-func (s *Server) doRegisterSubscriberUpload(topic string, handler broker.Handler, binder broker.Binder, opts ...broker.SubscribeOption) error {
-	sub, err := s.SubscribeUpload(topic, handler, binder, opts...)
-	if err != nil {
-		return err
-	}
-
-	s.subscribers.Store(topic, sub)
 
 	return nil
 }
@@ -288,24 +154,6 @@ func (s *Server) doRegisterSubscriberMap() error {
 		topic := key.(string)
 		opt := value.(*SubscribeOption)
 		_ = s.doRegisterSubscriber(topic, opt.handler, opt.binder, opt.opts...)
-		return true
-	})
-	s.subscriberReqOpts.Range(func(key, value any) bool {
-		topic := key.(string)
-		opt := value.(*SubscribeOption)
-		_ = s.doRegisterSubscriberReq(topic, opt.handler, opt.binder, opt.opts...)
-		return true
-	})
-	s.subscriberRespOpts.Range(func(key, value any) bool {
-		topic := key.(string)
-		opt := value.(*SubscribeOption)
-		_ = s.doRegisterSubscriberResp(topic, opt.handler, opt.binder, opt.opts...)
-		return true
-	})
-	s.subscriberUploadOpts.Range(func(key, value any) bool {
-		topic := key.(string)
-		opt := value.(*SubscribeOption)
-		_ = s.doRegisterSubscriberUpload(topic, opt.handler, opt.binder, opt.opts...)
 		return true
 	})
 	return nil

@@ -193,6 +193,15 @@ const (
 	ContextCodec  = "Context-Codec"
 	TimeStampFrom = "TimeStampFrom"
 	TimeStampTo   = "TimeStampTo"
+
+	Host             = "Host"
+	Connection       = "Connection"
+	ContentType      = "Content-Type"
+	TransferEncoding = "Transfer-Encoding"
+	AcceptEncoding   = "Accept-Encoding"
+	Authorization    = "Authorization"
+	ContentLength    = "Content-Length"
+	SessionId        = "SessionId"
 )
 
 type PublishOptions struct {
