@@ -4,7 +4,8 @@ go 1.20
 
 require (
 	github.com/go-kratos/kratos/v2 v2.6.2
-	github.com/luobote55/kratos-transport-rpc v0.1.0
+	github.com/luobote55/kratos-transport-rpc v0.1.1
+	github.com/luobote55/kratos-transport-rpc/broker/mqtt v0.0.0-20230603014742-a3c4b51c663a
 	github.com/stretchr/testify v1.8.4
 )
 
