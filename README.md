@@ -1,17 +1,23 @@
-
-调用rpc化：
+# v0.1.1
+# 调用rpc化,
 1. mqtt的调用模拟成rpc调用
-2. metadata的基本实现
+2. 打包成http报文，以实现metadata
+3. Marshal/Unmarshal any type for format json/proto.
+4. kratos proto server ./xxx.proto --->   xxx_mqt.pb.go
 
-todo：
-1. Marshal/Unmarshal any type for format json/proto.
-2. middleware for Metrics/Tracing/Logging
-3. kratos proto server ./xxx.proto   --->   xxx_mqtt.pb.go
+# todo：
+1. middleware for Metrics/Tracing/Logging
 
-编译：
-protoc --proto_path=./broker --proto_path=./third_party broker.proto --go_out=./broker
-protoc --proto_path=./api/v1 --proto_path=./third_party greeter.proto --go_out=.
-cd .\transport\mqtt\  
+# 编译kratos
+cd .\cmd\kratos\ && go build
+# 编译protoc-gen-go-mqt
+cd .\cmd\protoc-gen-go-mqt\ && go build
+
+## 拷贝kratos、protoc-gen-go-mqt至bin目录
+kratos proto client ./api/v1/greeter.proto
+## 产生greeter_mqt_pb.go
+
+cd .\server\mqtt\  
 go test -v
 
 reference:
