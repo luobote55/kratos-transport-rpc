@@ -58,6 +58,9 @@ func Test_Publish_WithRawData(t *testing.T) {
 		msg.Humidity = float64(rand.Intn(100))
 		msg.Temperature = float64(rand.Intn(100))
 		buf, _ := json.Marshal(&msg)
+		buf = []byte{
+			1, 2, 3, 0, 0, 0, 00, 1, 2, 3, 45, 65,
+		}
 		err := b.PublishRaw("topic/bobo/1", buf)
 		assert.Nil(t, err)
 		elapsedTime := time.Since(startTime) / time.Millisecond

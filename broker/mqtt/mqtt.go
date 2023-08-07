@@ -3,6 +3,7 @@ package mqtt
 import (
 	"errors"
 	"github.com/luobote55/kratos-transport-rpc/broker"
+	"runtime"
 	"strings"
 	"sync"
 	"time"
@@ -230,6 +231,13 @@ func (m *mqttBroker) Subscribe(topic string, handler broker.Handler, binder brok
 	}
 	t := m.client.Subscribe(topic, qos, func(c MQTT.Client, mq MQTT.Message) {
 		go func() {
+			defer func() {
+				if rerr := recover(); rerr != nil {
+					buf := make([]byte, 64<<10) //nolint:gomnd
+					n := runtime.Stack(buf, false)
+					log.Errorf("panic %v: \n%s\n", rerr, buf[:n])
+				}
+			}()
 			var msg broker.Message
 			p := &publication{topic: mq.Topic(), msg: &msg, raw: mq.Payload()}
 			if err := handler(m.opts.Context, p); err != nil {
@@ -277,7 +285,7 @@ func (m *mqttBroker) onConnect(_ MQTT.Client) {
 func (m *mqttBroker) onConnectionLost(client MQTT.Client, _ error) {
 	log.Errorf("%s on connect lost, try to reconnect", m.addrs[0])
 	m.Options()
-	m.loopConnect(client)
+//	m.loopConnect(client)
 }
 
 func (m *mqttBroker) loopConnect(client MQTT.Client) {
