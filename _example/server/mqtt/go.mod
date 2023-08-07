@@ -4,8 +4,9 @@ go 1.20
 
 require (
 	github.com/go-kratos/kratos/v2 v2.6.3
-	github.com/luobote55/kratos-transport-rpc v0.1.1
-	github.com/luobote55/kratos-transport-rpc/transport/mqtt v0.0.0-20230613065335-176757dd1f1c
+	github.com/luobote55/kratos-transport-rpc v0.1.2
+	github.com/luobote55/kratos-transport-rpc/broker/mqtt v0.0.0-20230807081018-67edbce4da47 // indirect
+	github.com/luobote55/kratos-transport-rpc/transport/mqtt v0.0.0-20230807074644-e36fc74bb75e
 	github.com/tx7do/kratos-transport v1.0.7
 	google.golang.org/genproto/googleapis/api v0.0.0-20230803162519-f966b187b2e5
 	google.golang.org/grpc v1.57.0
@@ -22,7 +23,6 @@ require (
 	github.com/google/uuid v1.3.0 // indirect
 	github.com/gorilla/mux v1.8.0 // indirect
 	github.com/gorilla/websocket v1.5.0 // indirect
-	github.com/luobote55/kratos-transport-rpc/broker/mqtt v0.0.0-20230612152442-29d737681a30 // indirect
 	github.com/openzipkin/zipkin-go v0.4.1 // indirect
 	go.opentelemetry.io/otel v1.16.0 // indirect
 	go.opentelemetry.io/otel/exporters/jaeger v1.16.0 // indirect
