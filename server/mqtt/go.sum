@@ -76,8 +76,8 @@ github.com/luobote55/kratos-transport-rpc v0.1.2 h1:4Cy0oXVTXd9qF/Sb9N/wjqYWcCcz
 github.com/luobote55/kratos-transport-rpc v0.1.2/go.mod h1:kZYdfdCXpZQBRAZue4LnsjTJb7RlbWW3RC6VFdBTwAI=
 github.com/luobote55/kratos-transport-rpc/broker/mqtt v0.0.0-20230807081018-67edbce4da47 h1:k5X0o+QsSxuUsQH734GqoW147/LPo9XLxOfFGNhmIis=
 github.com/luobote55/kratos-transport-rpc/broker/mqtt v0.0.0-20230807081018-67edbce4da47/go.mod h1:Lm7JaHofDguFqLbDdfHLH6uAqLZqFG5vJahViA6/G/g=
-github.com/luobote55/kratos-transport-rpc/transport/mqtt v0.0.0-20230807074644-e36fc74bb75e h1:ztAcCA/d2XzPsGP8YvU4JudfPQ/XyePRfo/0DtUr+uI=
-github.com/luobote55/kratos-transport-rpc/transport/mqtt v0.0.0-20230807074644-e36fc74bb75e/go.mod h1:eAwdysRlneTCwY6EvWdGZ4QdMZRd9Af7UeNAekGOC68=
+github.com/luobote55/kratos-transport-rpc/transport/mqtt v0.0.0-20230807081018-67edbce4da47 h1:ya8xZ7w0Zen/NlDkpyEMbOmN5M7Rg3pMBNZlfjuN3jY=
+github.com/luobote55/kratos-transport-rpc/transport/mqtt v0.0.0-20230807081018-67edbce4da47/go.mod h1:eAwdysRlneTCwY6EvWdGZ4QdMZRd9Af7UeNAekGOC68=
 github.com/mattn/go-isatty v0.0.4/go.mod h1:M+lRXTBqGeGNdLjl/ufCoiOlB5xdOkqRJdNxMWT7Zi4=
 github.com/mattn/go-isatty v0.0.12/go.mod h1:cbi8OIDigv2wuxKPP5vlRcQ1OAZbq2CE4Kysco4FUpU=
 github.com/modern-go/concurrent v0.0.0-20180228061459-e0a39a4cb421/go.mod h1:6dJC0mAP4ikYIbvyc7fijjWJddQyLn8Ig3JB5CqoB9Q=

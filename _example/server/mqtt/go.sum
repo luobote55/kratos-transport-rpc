@@ -32,8 +32,8 @@ github.com/luobote55/kratos-transport-rpc v0.1.2 h1:4Cy0oXVTXd9qF/Sb9N/wjqYWcCcz
 github.com/luobote55/kratos-transport-rpc v0.1.2/go.mod h1:kZYdfdCXpZQBRAZue4LnsjTJb7RlbWW3RC6VFdBTwAI=
 github.com/luobote55/kratos-transport-rpc/broker/mqtt v0.0.0-20230807081018-67edbce4da47 h1:k5X0o+QsSxuUsQH734GqoW147/LPo9XLxOfFGNhmIis=
 github.com/luobote55/kratos-transport-rpc/broker/mqtt v0.0.0-20230807081018-67edbce4da47/go.mod h1:Lm7JaHofDguFqLbDdfHLH6uAqLZqFG5vJahViA6/G/g=
-github.com/luobote55/kratos-transport-rpc/transport/mqtt v0.0.0-20230807074644-e36fc74bb75e h1:ztAcCA/d2XzPsGP8YvU4JudfPQ/XyePRfo/0DtUr+uI=
-github.com/luobote55/kratos-transport-rpc/transport/mqtt v0.0.0-20230807074644-e36fc74bb75e/go.mod h1:eAwdysRlneTCwY6EvWdGZ4QdMZRd9Af7UeNAekGOC68=
+github.com/luobote55/kratos-transport-rpc/transport/mqtt v0.0.0-20230807081018-67edbce4da47 h1:ya8xZ7w0Zen/NlDkpyEMbOmN5M7Rg3pMBNZlfjuN3jY=
+github.com/luobote55/kratos-transport-rpc/transport/mqtt v0.0.0-20230807081018-67edbce4da47/go.mod h1:eAwdysRlneTCwY6EvWdGZ4QdMZRd9Af7UeNAekGOC68=
 github.com/openzipkin/zipkin-go v0.4.1 h1:kNd/ST2yLLWhaWrkgchya40TJabe8Hioj9udfPcEO5A=
 github.com/openzipkin/zipkin-go v0.4.1/go.mod h1:qY0VqDSN1pOBN94dBc6w2GJlWLiovAyg7Qt6/I9HecM=
 github.com/pmezard/go-difflib v1.0.0 h1:4DBwDE0NGyQoBHbLQYPwSUPoCMWR5BEzIk/f1lZbAQM=

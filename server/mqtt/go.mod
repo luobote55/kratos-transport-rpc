@@ -7,7 +7,7 @@ require (
 	github.com/go-kratos/kratos/v2 v2.6.2
 	github.com/google/uuid v1.3.0
 	github.com/luobote55/kratos-transport-rpc v0.1.2
-	github.com/luobote55/kratos-transport-rpc/transport/mqtt v0.0.0-20230807074644-e36fc74bb75e
+	github.com/luobote55/kratos-transport-rpc/transport/mqtt v0.0.0-20230807081018-67edbce4da47
 	github.com/pkg/errors v0.9.1
 )
 
