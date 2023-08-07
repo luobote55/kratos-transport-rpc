@@ -63,6 +63,18 @@ func WithClientId(clientId string) ServerOption {
 	}
 }
 
+func WithAutoReconnect(enable bool) ServerOption {
+	return func(s *Server) {
+		s.brokerOpts = append(s.brokerOpts, mqtt.WithAutoReconnect(enable))
+	}
+}
+
+func WithResumeSubs(enable bool) ServerOption {
+	return func(s *Server) {
+		s.brokerOpts = append(s.brokerOpts, mqtt.WithResumeSubs(enable))
+	}
+}
+
 func WithCodec(c string) ServerOption {
 	return func(s *Server) {
 		s.brokerOpts = append(s.brokerOpts, broker.WithCodec(c))

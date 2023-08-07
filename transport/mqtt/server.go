@@ -7,6 +7,7 @@ import (
 	"net/url"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/go-kratos/kratos/v2/log"
 	"github.com/go-kratos/kratos/v2/transport"
@@ -77,6 +78,9 @@ func (s *Server) InitServer(opts ...ServerOption) {
 		}
 	}))
 	s.Broker = mqtt.NewBroker(s.brokerOpts...)
+
+	ctx, _ := context.WithTimeout(context.Background(), 5*time.Second)
+	s.Start(ctx)
 }
 
 func (s *Server) init(opts ...ServerOption) {
@@ -111,7 +115,7 @@ func (s *Server) Start(ctx context.Context) error {
 		return nil
 	}
 
-	s.err = s.ConnectRetry()
+	s.err = s.Connect()
 	if s.err != nil {
 		return s.err
 	}
