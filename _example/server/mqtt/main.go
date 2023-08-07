@@ -2,13 +2,12 @@ package main
 
 import (
 	"context"
-	v1 "github.com/luobote55/kratos-transport-rpc/api/v1"
-	"time"
-
+	"github.com/go-kratos/kratos/v2"
 	"github.com/go-kratos/kratos/v2/log"
 	"github.com/luobote55/kratos-transport-rpc/broker"
 	"github.com/luobote55/kratos-transport-rpc/transport/mqtt"
 	api "github.com/tx7do/kratos-transport/_example/api/manual"
+	"time"
 )
 
 const (
@@ -36,21 +35,13 @@ func main() {
 
 	_ = mqttSrv.RegisterSubscriber(ctx,
 		"topic/bobo/#",
-		func(ctx context.Context, msg broker.Event) (broker.Any, error) {
-			startTime := time.Now()
+		func(ctx context.Context, msg broker.Event) error {
+			//startTime := time.Now()
 			<-time.NewTicker(time.Millisecond * 10).C // process time
-			req := msg.Data().(*v1.HelloRequest)
-			return &v1.HelloReply{
-				Message:  req.Name,
-				TimeFrom: req.TimeFrom,
-				TimeRecv: startTime.UnixNano(),
-				TimeTo:   time.Now().UnixNano(),
-			}, nil
-		}, func(identifier string) broker.Any {
-			if identifier == "HelloRequest" {
-				return &v1.HelloRequest{}
-			}
+			//req := msg.Data().(*HelloRequest)
 			return nil
+		}, func() broker.Any {
+			return &HelloRequest{}
 		})
 
 	app := kratos.New(

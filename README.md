@@ -1,3 +1,8 @@
+# v0.1.2
+1. 增加recover
+2. 同步connect
+
+
 # v0.1.1
 # 调用rpc化,
 1. mqtt的调用模拟成rpc调用

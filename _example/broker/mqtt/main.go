@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	api "github.com/luobote55/kratos-transport-rpc/api/manual"
 	"os"
 	"os/signal"
 	"syscall"
@@ -10,7 +11,6 @@ import (
 	"github.com/go-kratos/kratos/v2/log"
 	"github.com/luobote55/kratos-transport-rpc/broker"
 	"github.com/luobote55/kratos-transport-rpc/broker/mqtt"
-	api "github.com/tx7do/kratos-transport/_example/api/manual"
 )
 
 const (
@@ -62,6 +62,10 @@ func main() {
 	if err != nil {
 		fmt.Println(err)
 	}
+	b.Publish(topic, api.Hygrothermograph{
+		Humidity:    12,
+		Temperature: 34,
+	}, mqtt.WithPublishRetained(1))
 
 	<-interrupt
 }
