@@ -3,7 +3,7 @@ package main
 import (
 	"fmt"
 	anns "github.com/luobote55/kratos-transport-rpc/fourth_party/gogogle/api"
-	"github.com/luobote55/kratos-transport-rpc/transport/mqtt"
+	"github.com/luobote55/kratos-transport-rpc/server/mqtt"
 	"google.golang.org/protobuf/compiler/protogen"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/reflect/protoreflect"
