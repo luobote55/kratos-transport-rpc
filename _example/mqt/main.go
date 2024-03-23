@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	v1 "github.com/luobote55/kratos-transport-rpc/api/v1"
 	"github.com/luobote55/kratos-transport-rpc/server/mqtt"
 	"log"
 	"time"
@@ -20,11 +21,11 @@ const (
 )
 
 type Service struct {
-	UnimplementedGreeterMqtServer
+	v1.UnimplementedGreeterMqtServer
 }
 
-func (s *Service) SayHello(ctx context.Context, request *HelloRequest) (*HelloReply, error) {
-	resp := HelloReply{
+func (s *Service) SayHello(ctx context.Context, request *v1.HelloRequest) (*v1.HelloReply, error) {
+	resp := v1.HelloReply{
 		Message:  "asdfasdfasdf",
 		TimeFrom: request.TimeFrom,
 		TimeRecv: time.Now().Unix(),
@@ -49,10 +50,10 @@ func main() {
 
 	time.Sleep(time.Second * time.Duration(2))
 	service := &Service{}
-	RegisterGreeterMqtServer(s, "/hello", service)
+	v1.RegisterGreeterMqtServer(s, "/hello", service)
 
-	c := NewGreeterMqtClient(mqtt.NewClient())
-	resp, err := c.SayHello(context.Background(), "/hello", &HelloRequest{})
+	c := v1.NewGreeterMqtClient(mqtt.NewClient())
+	resp, err := c.SayHello(context.Background(), "/hello", &v1.HelloRequest{})
 	if err != nil {
 		log.Fatal(err)
 	}

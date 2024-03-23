@@ -4,7 +4,7 @@ package greeter;
 
 import "google/api/annotations.proto";
 
-option go_package = "api/v1;main";
+option go_package = "api/v1;v1";
 option java_multiple_files = true;
 option java_package = "dev.kratos.api.helloworld.v1";
 option java_outer_classname = "HelloworldProtoV1";
